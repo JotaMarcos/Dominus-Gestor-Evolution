@@ -116,7 +116,7 @@
                         <phase>process-resources</phase>
                         <goals><goal>copy-resources</goal></goals>
                         <configuration>
-                                    <outputDirectory>${project.build.outputDirectory}/META-INF/resources</outputDirectory>
+                            <outputDirectory>${project.build.outputDirectory}/META-INF/resources</outputDirectory>
                             <resources>
                                 <resource>
                                     <directory>${project.basedir}/../frontend/webapp</directory>

@@ -16,7 +16,7 @@ Projetado com Quarkus 3 e Java 21, o sistema usa RESTEasy Reactive, CDI e o pool
 - **JasperReports Engine (v7.0.7)**: Motor de relatórios para exportação em **PDF, XLSX, DOCX, CSV e TXT**.
 - **Google Authenticator (TOTP)**: Suporte nativo à Autenticação Multifator (2FA/MFA).
 - **Docker & Docker Compose**: Containerização completa da aplicação e do banco de dados com build multi-estágio (_multi-stage build_).
-- **Apache Maven**: Gerenciamento de dependências e empacotamento (`shade-plugin`).
+- **Apache Maven**: Gerenciamento de dependências e empacotamento Quarkus fast-jar.
 
 ### **Frontend**
 
