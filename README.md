@@ -2,7 +2,7 @@
 
 O **Dominus Gestor** é uma aplicação web corporativa de alta performance desenvolvida para gestão financeira, controle de clientes e fornecedores, e geração de relatórios gerenciais em múltiplos formatos.
 
-Projetado com uma arquitetura nativa em Java 21, o sistema dispensa frameworks pesados no backend e usa o servidor HTTP interno da linguagem.
+Projetado com Quarkus 3 e Java 21, o sistema usa RESTEasy Reactive, CDI e o pool Agroal para entregar uma aplicação leve e eficiente.
 
 ---
 
@@ -10,10 +10,10 @@ Projetado com uma arquitetura nativa em Java 21, o sistema dispensa frameworks p
 
 ### **Backend & Infraestrutura**
 
-- **Java 21 Nativo**: Servidor Web HTTP (`com.sun.net.httpserver`) e Virtual Threads.
+- **Quarkus 3**: API REST reativa, CDI e empacotamento fast-jar.
 - **PostgreSQL 16**: Banco de dados relacional com modelagem para RBAC e MFA.
-- **HikariCP**: Pool de conexões JDBC de altíssimo desempenho.
-- **JasperReports Engine (v6.21.2)**: Motor de relatórios para exportação em **PDF, XLSX, DOCX, CSV e TXT**.
+- **Agroal**: Pool de conexões JDBC gerenciado pelo Quarkus.
+- **JasperReports Engine (v7.0.7)**: Motor de relatórios para exportação em **PDF, XLSX, DOCX, CSV e TXT**.
 - **Google Authenticator (TOTP)**: Suporte nativo à Autenticação Multifator (2FA/MFA).
 - **Docker & Docker Compose**: Containerização completa da aplicação e do banco de dados com build multi-estágio (_multi-stage build_).
 - **Apache Maven**: Gerenciamento de dependências e empacotamento (`shade-plugin`).
@@ -21,7 +21,7 @@ Projetado com uma arquitetura nativa em Java 21, o sistema dispensa frameworks p
 ### **Frontend**
 
 - **HTML5 & CSS3 Moderno**: Interface limpa, responsiva e otimizada.
-- **JavaScript (Vanilla)**: Manipulação nativa da DOM, integração via `fetch` API e gerenciamento de downloads de relatórios sem dependências externas.
+- **JavaScript (Vanilla)**: Manipulação nativa do DOM, integração via `fetch` API e gerenciamento de downloads sem dependências externas.
 
 ---
 
@@ -41,8 +41,6 @@ Projetado com uma arquitetura nativa em Java 21, o sistema dispensa frameworks p
 
 ## 📂 Estrutura do Projeto
 
-## 📂 Estrutura do Projeto
-
 ```text
 dominus-gestor-evolution/
 ├── 📄 docker-compose.yml             # Orquestração do PostgreSQL e Aplicação Java
@@ -52,11 +50,9 @@ dominus-gestor-evolution/
 │   └── 📁 src/
 │       └── 📁 main/
 │           ├── 📁 java/br/com/dominus/
-        │   ├── 📄 Main.java          # Entrypoint HTTP Server (Virtual Threads)
-        │   ├── 📁 config/            # Pool HikariCP e Filtros de Segurança
-        │   ├── 📁 controller/        # Handlers REST (Auth, Clientes, Financeiro, Relatórios)
-        │   ├── 📁 dao/               # Data Access Objects (JDBC Puro)
-    │   └── 📁 service/           # Serviços para MFA (TOTP) e JasperReports Engine
+        │   ├── 📁 config/            # Configuração de persistência e aplicação
+        │   ├── 📁 controller/        # Recursos REST (Auth, Clientes, Financeiro, Relatórios)
+      │   └── 📁 service/           # Serviços para MFA (TOTP) e JasperReports Engine
       └── 📁 resources/
         ├── 📁 db/             # Script DDL com RBAC e tabelas MFA
         └── 📁 reports/        # Templates de Relatórios (.jrxml)
@@ -93,6 +89,12 @@ dominus-gestor-evolution/
 
 - **Web UI:** [http://localhost:8080](http://localhost:8080)
 - **PostgreSQL:** `localhost:5432` _(Database: `dominus_db` | User: `dominus`)_
+
+O backend Quarkus serve o frontend diretamente em `META-INF/resources`, mantendo a aplicação organizada exclusivamente nos diretórios `backend/` e `frontend/`.
+
+### Execução local sem Docker
+
+No Windows, execute `start-dev.bat` ou `start-dev.ps1`. O script detecta automaticamente o Docker: com Docker, sobe o Compose completo; sem Docker, inicia o Quarkus no perfil `dev` com um banco H2 temporário compatível com PostgreSQL.
 
 ---
 

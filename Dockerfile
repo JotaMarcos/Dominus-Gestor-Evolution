@@ -1,12 +1,14 @@
-FROM maven:3.9.9-eclipse-temurin-25 AS build
+FROM maven:3.9.9-eclipse-temurin-21 AS build
 WORKDIR /app/backend
 COPY backend/pom.xml .
 COPY backend/src ./src
 COPY frontend ../frontend
 RUN mvn clean verify
 
-FROM eclipse-temurin:25-jre-alpine
+FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
-COPY --from=build /app/backend/target/dominus-gestor-evolution-1.0.0.jar app.jar
+COPY --from=build /app/backend/target/quarkus-app/ /app/quarkus-app/
+COPY docker-entrypoint.sh .
+RUN chmod +x docker-entrypoint.sh
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["/app/docker-entrypoint.sh"]

@@ -1,52 +1,33 @@
 package br.com.dominus.controller;
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import br.com.dominus.config.DatabaseConfig;
 import br.com.dominus.service.ReportService;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
+import javax.sql.DataSource;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.util.HashMap;
-import java.util.Map;
 
-public class RelatorioController implements HttpHandler {
-    @Override
-    public void handle(HttpExchange exchange) throws IOException {
-        if (!"GET".equalsIgnoreCase(exchange.getRequestMethod())) {
-            sendJsonResponse(exchange, 405, "{\"error\":\"Método não permitido\"}");
-            return;
-        }
+@Path("/api/relatorios/exportar")
+public class RelatorioController {
+    @Inject
+    DataSource dataSource;
 
-        String report = "relatorio_clientes";
-        String fmt = "pdf";
-
-        String query = exchange.getRequestURI().getRawQuery();
-        if (query != null) {
-            for (String param : query.split("&")) {
-                String[] pair = param.split("=", 2);
-                if (pair.length < 2) {
-                    continue;
-                }
-                String key = URLDecoder.decode(pair[0], StandardCharsets.UTF_8);
-                String value = URLDecoder.decode(pair[1], StandardCharsets.UTF_8);
-                if ("nome".equals(key)) {
-                    report = value;
-                } else if ("formato".equals(key)) {
-                    fmt = value.toLowerCase();
-                }
-            }
-        }
-
+    @GET
+    @Produces(MediaType.WILDCARD)
+    public Response exportar(@QueryParam("nome") @DefaultValue("relatorio_clientes") String report,
+            @QueryParam("formato") @DefaultValue("pdf") String formatName) {
         if (!"relatorio_clientes".equals(report) && !"relatorio_financeiro".equals(report)) {
-            sendJsonResponse(exchange, 400, "{\"error\":\"Relatório inválido\"}");
-            return;
+            return error(Response.Status.BAD_REQUEST, "Relatório inválido");
         }
-
-        ReportService.Format format = switch (fmt) {
+        ReportService.Format format = switch (formatName.toLowerCase()) {
             case "xlsx" -> ReportService.Format.XLSX;
             case "csv" -> ReportService.Format.CSV;
             case "docx" -> ReportService.Format.DOCX;
@@ -55,10 +36,8 @@ public class RelatorioController implements HttpHandler {
             default -> null;
         };
         if (format == null) {
-            sendJsonResponse(exchange, 400, "{\"error\":\"Formato inválido\"}");
-            return;
+            return error(Response.Status.BAD_REQUEST, "Formato inválido");
         }
-
         String mimeType = switch (format) {
             case PDF -> "application/pdf";
             case XLSX -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
@@ -66,29 +45,19 @@ public class RelatorioController implements HttpHandler {
             case DOCX -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
             case TXT -> "text/plain";
         };
-
-        try (Connection conn = DatabaseConfig.getConnection();
-                ByteArrayOutputStream reportOutput = new ByteArrayOutputStream()) {
-            Map<String, Object> params = new HashMap<>();
-            ReportService.exportReport(report, format, params, conn, reportOutput);
-            byte[] response = reportOutput.toByteArray();
-            exchange.getResponseHeaders().set("Content-Type", mimeType);
-            exchange.getResponseHeaders().set("Content-Disposition", "attachment; filename=" + report + "." + fmt);
-            exchange.sendResponseHeaders(200, response.length);
-            try (var os = exchange.getResponseBody()) {
-                os.write(response);
-            }
-        } catch (Exception e) {
-            sendJsonResponse(exchange, 500, "{\"error\":\"Falha ao gerar relatório\"}");
+        try (Connection connection = dataSource.getConnection();
+                ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            ReportService.exportReport(report, format, new HashMap<>(), connection, output);
+            return Response.ok(output.toByteArray(), mimeType)
+                    .header("Content-Disposition", "attachment; filename=" + report + "." + formatName.toLowerCase())
+                    .build();
+        } catch (Exception exception) {
+            return error(Response.Status.INTERNAL_SERVER_ERROR, "Falha ao gerar relatório");
         }
     }
 
-    private static void sendJsonResponse(HttpExchange exchange, int status, String body) throws IOException {
-        byte[] response = body.getBytes(StandardCharsets.UTF_8);
-        exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
-        exchange.sendResponseHeaders(status, response.length);
-        try (var output = exchange.getResponseBody()) {
-            output.write(response);
-        }
+    private static Response error(Response.Status status, String message) {
+        return Response.status(status).type(MediaType.APPLICATION_JSON).entity(java.util.Map.of("error", message))
+                .build();
     }
 }

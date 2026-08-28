@@ -1,107 +1,88 @@
 package br.com.dominus.controller;
 
-import br.com.dominus.config.DatabaseConfig;
-import br.com.dominus.service.MfaService;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import org.mindrot.jbcrypt.BCrypt;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.Map;
 
+@Path("/api/auth")
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
 public class AuthController {
-    private static final ObjectMapper JSON = new ObjectMapper();
-    private static final MfaService MFA = new MfaService();
+    @Inject
+    DataSource dataSource;
 
-    public static class LoginHandler implements HttpHandler {
-        @Override
-        public void handle(HttpExchange exchange) throws IOException {
-            if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
-                sendJsonResponse(exchange, 405, "{\"error\":\"Método não permitido\"}");
-                return;
-            }
-            JsonNode request = readJson(exchange);
-            String email = text(request, "email");
-            String password = text(request, "senha");
-            if (email.isBlank() || password.isBlank()) {
-                sendJsonResponse(exchange, 400, "{\"error\":\"E-mail e senha são obrigatórios\"}");
-                return;
-            }
+    @Inject
+    br.com.dominus.service.MfaService mfaService;
 
-            String sql = "SELECT u.senha_hash, u.mfa_habilitado, p.nome "
-                    + "FROM usuario u JOIN perfil p ON p.id = u.id_perfil "
-                    + "WHERE lower(u.email) = lower(?) AND u.situacao = 'ATIVO'";
-            try (Connection connection = DatabaseConfig.getConnection();
-                    PreparedStatement statement = connection.prepareStatement(sql)) {
-                statement.setString(1, email);
-                try (ResultSet result = statement.executeQuery()) {
-                    if (!result.next() || !BCrypt.checkpw(password, result.getString("senha_hash"))) {
-                        sendJsonResponse(exchange, 401, "{\"error\":\"Credenciais inválidas\"}");
-                        return;
-                    }
-                    String role = result.getString("nome");
-                    boolean mfaRequired = result.getBoolean("mfa_habilitado");
-                    sendJsonResponse(exchange, 200, JSON.writeValueAsString(
-                            java.util.Map.of("status", "SUCCESS", "role", role, "mfaRequired", mfaRequired)));
+    @POST
+    @Path("/login")
+    public Response login(JsonNode request) {
+        String email = text(request, "email");
+        String password = text(request, "senha");
+        if (email.isBlank() || password.isBlank()) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of("error", "E-mail e senha são obrigatórios")).build();
+        }
+        String sql = "SELECT u.senha_hash, u.mfa_habilitado, p.nome FROM usuario u JOIN perfil p ON p.id = u.id_perfil WHERE lower(u.email) = lower(?) AND u.situacao = 'ATIVO'";
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, email);
+            try (ResultSet result = statement.executeQuery()) {
+                if (!result.next() || !BCrypt.checkpw(password, result.getString("senha_hash"))) {
+                    return Response.status(Response.Status.UNAUTHORIZED)
+                            .entity(Map.of("error", "Credenciais inválidas")).build();
                 }
-            } catch (Exception exception) {
-                sendJsonResponse(exchange, 503, "{\"error\":\"Serviço de autenticação indisponível\"}");
+                return Response.ok(Map.of("status", "SUCCESS", "role", result.getString("nome"), "mfaRequired",
+                        result.getBoolean("mfa_habilitado"))).build();
             }
+        } catch (Exception exception) {
+            return unavailable();
         }
     }
 
-    public static class MfaToggleHandler implements HttpHandler {
-        @Override
-        public void handle(HttpExchange exchange) throws IOException {
-            if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
-                sendJsonResponse(exchange, 405, "{\"error\":\"Método não permitido\"}");
-                return;
-            }
-            sendJsonResponse(exchange, 501, "{\"error\":\"Operação requer usuário autenticado\"}");
-        }
+    @POST
+    @Path("/mfa/toggle")
+    public Response toggleMfa() {
+        return Response.status(Response.Status.NOT_IMPLEMENTED)
+                .entity(Map.of("error", "Operação requer usuário autenticado")).build();
     }
 
-    public static class MfaVerifyHandler implements HttpHandler {
-        @Override
-        public void handle(HttpExchange exchange) throws IOException {
-            if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
-                sendJsonResponse(exchange, 405, "{\"error\":\"Método não permitido\"}");
-                return;
-            }
-            JsonNode request = readJson(exchange);
-            String email = text(request, "email");
-            String code = text(request, "code");
-            if (email.isBlank() || !code.matches("\\d{6}")) {
-                sendJsonResponse(exchange, 400, "{\"error\":\"E-mail e código MFA são obrigatórios\"}");
-                return;
-            }
-            String sql = "SELECT mfa_secret FROM usuario WHERE lower(email) = lower(?) "
-                    + "AND situacao = 'ATIVO' AND mfa_habilitado = TRUE";
-            try (Connection connection = DatabaseConfig.getConnection();
-                    PreparedStatement statement = connection.prepareStatement(sql)) {
-                statement.setString(1, email);
-                try (ResultSet result = statement.executeQuery()) {
-                    if (!result.next() || result.getString("mfa_secret") == null
-                            || !MFA.verifyCode(result.getString("mfa_secret"), Integer.parseInt(code))) {
-                        sendJsonResponse(exchange, 401, "{\"error\":\"Código MFA inválido\"}");
-                        return;
-                    }
-                    sendJsonResponse(exchange, 200, "{\"status\":\"VALIDATED\"}");
+    @POST
+    @Path("/mfa/verify")
+    public Response verifyMfa(JsonNode request) {
+        String email = text(request, "email");
+        String code = text(request, "code");
+        if (email.isBlank() || !code.matches("\\d{6}")) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of("error", "E-mail e código MFA são obrigatórios")).build();
+        }
+        String sql = "SELECT mfa_secret FROM usuario WHERE lower(email) = lower(?) AND situacao = 'ATIVO' AND mfa_habilitado = TRUE";
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, email);
+            try (ResultSet result = statement.executeQuery()) {
+                if (!result.next() || result.getString("mfa_secret") == null
+                        || !mfaService.verifyCode(result.getString("mfa_secret"), Integer.parseInt(code))) {
+                    return Response.status(Response.Status.UNAUTHORIZED).entity(Map.of("error", "Código MFA inválido"))
+                            .build();
                 }
-            } catch (Exception exception) {
-                sendJsonResponse(exchange, 503, "{\"error\":\"Serviço de autenticação indisponível\"}");
+                return Response.ok(Map.of("status", "VALIDATED")).build();
             }
+        } catch (Exception exception) {
+            return unavailable();
         }
-    }
-
-    private static JsonNode readJson(HttpExchange exchange) throws IOException {
-        return JSON.readTree(exchange.getRequestBody());
     }
 
     private static String text(JsonNode request, String field) {
@@ -109,12 +90,8 @@ public class AuthController {
         return value == null ? "" : value.asText().trim();
     }
 
-    private static void sendJsonResponse(HttpExchange exchange, int code, String json) throws IOException {
-        byte[] response = json.getBytes(StandardCharsets.UTF_8);
-        exchange.getResponseHeaders().set("Content-Type", "application/json");
-        exchange.sendResponseHeaders(code, response.length);
-        try (OutputStream os = exchange.getResponseBody()) {
-            os.write(response);
-        }
+    private static Response unavailable() {
+        return Response.status(Response.Status.SERVICE_UNAVAILABLE)
+                .entity(Map.of("error", "Serviço de autenticação indisponível")).build();
     }
 }
