@@ -16,6 +16,7 @@ ON CONFLICT (id) DO NOTHING;
 CREATE TABLE IF NOT EXISTS usuario (
     id SERIAL PRIMARY KEY,
     nome VARCHAR(255) NOT NULL,
+    login VARCHAR(100) UNIQUE,
     email VARCHAR(255) UNIQUE NOT NULL,
     senha_hash VARCHAR(255) NOT NULL,
     id_perfil INTEGER NOT NULL REFERENCES perfil(id),
@@ -25,6 +26,11 @@ CREATE TABLE IF NOT EXISTS usuario (
     pin_seguranca VARCHAR(6),
     situacao VARCHAR(10) DEFAULT 'ATIVO' CHECK (situacao IN ('ATIVO', 'INATIVO'))
 );
+
+-- O administrador inicial é criado exclusivamente pelo banco de dados.
+INSERT INTO usuario (nome, login, email, senha_hash, id_perfil, mfa_habilitado, situacao)
+VALUES ('Administrador do Sistema', 'Admin', 'admin@dominus.com.br', '$2a$12$hemJldWDuCR5HLqtUhPB5OA0YbgrX8Z7ebN4FllZ6q0sQL5ir3d/2', 1, FALSE, 'ATIVO')
+ON CONFLICT (email) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS cliente (
     id SERIAL PRIMARY KEY,

@@ -20,8 +20,17 @@ public class DevDatabaseInitializer {
     DataSource dataSource;
 
     void initialize(@Observes StartupEvent event) {
+        resetDatabase();
         executeScript("db/schema.sql");
         executeScript("db/dev-seed.sql");
+    }
+
+    private void resetDatabase() {
+        try (Connection connection = dataSource.getConnection(); Statement statement = connection.createStatement()) {
+            statement.execute("DROP ALL OBJECTS");
+        } catch (Exception exception) {
+            throw new IllegalStateException("Falha ao limpar o banco dev", exception);
+        }
     }
 
     private void executeScript(String resource) {
@@ -30,7 +39,7 @@ public class DevDatabaseInitializer {
                 throw new IllegalStateException("Script não encontrado: " + resource);
             }
             String script = new String(input.readAllBytes(), StandardCharsets.UTF_8)
-                    .replaceAll("(?i)ON\\s+CONFLICT\\s*\\(id\\)\\s*DO\\s+NOTHING", "");
+                    .replaceAll("(?i)ON\\s+CONFLICT\\s*\\([^)]*\\)\\s*DO\\s+NOTHING", "");
             try (Connection connection = dataSource.getConnection();
                     Statement statement = connection.createStatement()) {
                 for (String sql : script.split(";")) {

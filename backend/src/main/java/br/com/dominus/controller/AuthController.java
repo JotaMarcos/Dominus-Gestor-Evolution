@@ -30,15 +30,19 @@ public class AuthController {
     @Path("/login")
     public Response login(JsonNode request) {
         String email = text(request, "email");
+        String login = text(request, "login");
         String password = text(request, "senha");
-        if (email.isBlank() || password.isBlank()) {
+        String identity = login.isBlank() ? email : login;
+        if (identity.isBlank() || password.isBlank()) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(Map.of("error", "E-mail e senha são obrigatórios")).build();
         }
-        String sql = "SELECT u.senha_hash, u.mfa_habilitado, p.nome FROM usuario u JOIN perfil p ON p.id = u.id_perfil WHERE lower(u.email) = lower(?) AND u.situacao = 'ATIVO'";
+        String sql = "SELECT u.senha_hash, u.mfa_habilitado, p.nome FROM usuario u JOIN perfil p ON p.id = u.id_perfil "
+                + "WHERE (lower(u.email) = lower(?) OR lower(u.login) = lower(?)) AND u.situacao = 'ATIVO'";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, email);
+            statement.setString(1, identity);
+            statement.setString(2, identity);
             try (ResultSet result = statement.executeQuery()) {
                 if (!result.next() || !BCrypt.checkpw(password, result.getString("senha_hash"))) {
                     return Response.status(Response.Status.UNAUTHORIZED)

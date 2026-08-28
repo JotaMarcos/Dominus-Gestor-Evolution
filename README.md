@@ -1,4 +1,4 @@
-# Dominus Gestor - Sistema Web de Gestao Financeira e MFA
+# Dominus Gestor - Sistema Web de Gestão Financeira e MFA
 
 O **Dominus Gestor** é uma aplicação web corporativa de alta performance desenvolvida para gestão financeira, controle de clientes e fornecedores, e geração de relatórios gerenciais em múltiplos formatos.
 
@@ -105,3 +105,70 @@ No modo local sem Docker, use `admin@dominus.com.br` com a senha `Dominus@Dev202
 Desenvolvido por **[João Marcos Aires Duarte](https://github.com/JotaMarcos)**.
 
 ---
+
+## Acesso e Cadastro de Usuários
+
+O administrador inicial é criado exclusivamente pelo banco de dados:
+
+- Login: `Admin`
+- E-mail: `admin@dominus.com.br`
+- Senha: `Toor#@!1439$10`
+
+A senha nunca é gravada em texto puro: o banco armazena somente o hash BCrypt. A tela `cadastro.html` permite criar usuários do perfil `OPERADOR`; a API não permite criar administradores pela interface.
+
+## Execução Local Completa
+
+Na raiz do projeto, no Windows, execute:
+
+```powershell
+.\start-dev.ps1
+```
+
+O script verifica o Docker automaticamente. Com Docker disponível, executa `docker compose up --build`, sobe PostgreSQL e a aplicação. Sem Docker, executa Quarkus no perfil `dev`, usa H2 temporário compatível com PostgreSQL e carrega o schema e o usuário administrador de desenvolvimento.
+
+Também é possível usar `start-dev.bat`. Para executar manualmente o backend, entre em `backend/` antes de chamar Maven:
+
+```powershell
+cd backend
+mvn quarkus:dev -Dquarkus.profile=dev -Dquarkus.analytics.disabled=true
+```
+
+Não execute Maven na raiz, pois o `pom.xml` está em `backend/`.
+
+## Estrutura Atual
+
+```text
+dominus-gestor-evolution/
+├── backend/
+│   ├── pom.xml
+│   └── src/main/
+│       ├── java/br/com/dominus/
+│       │   ├── config/          # Datasource e inicialização dev
+│       │   ├── controller/      # Recursos REST
+│       │   └── service/         # MFA e relatórios
+│       └── resources/
+│           ├── application.properties
+│           ├── db/               # Schema e seed do administrador
+│           └── reports/          # Modelos JasperReports
+├── frontend/webapp/
+│   ├── index.html                # Login
+│   ├── cadastro.html             # Cadastro de operadores
+│   ├── admin.html                # Usuários e MFA
+│   ├── gerente.html              # Gestão e relatórios
+│   ├── sistema.html              # Clientes e financeiro
+│   ├── css/style.css             # Estilos próprios
+│   └── js/                       # Comportamentos da interface
+├── docker-compose.yml
+├── Dockerfile
+├── docker-entrypoint.sh
+├── start-dev.bat
+└── start-dev.ps1
+```
+
+## Banco de Dados
+
+Em produção, configure `DB_URL`, `DB_USER` e `DB_PASS`, ou use `DB_PASS_FILE` no Docker. O PostgreSQL é o banco oficial da aplicação e o Quarkus gerencia o pool Agroal. O H2 existe somente para desenvolvimento sem Docker.
+
+## Identidade Visual
+
+Toda a interface e sua escrita estão em português do Brasil. O projeto não adiciona logos, ícones, imagens ou fontes de frameworks externos; os estilos pertencem à própria aplicação.
