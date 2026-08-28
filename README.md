@@ -38,25 +38,36 @@ Projetado com uma arquitetura nativa em Java 21, o sistema dispensa frameworks p
   - Exportação dinâmica de demonstrativos e listagens nos formatos **PDF, Excel (XLSX), Word (DOCX), CSV e TXT**.
 
 ---
-
 ## 📂 Estrutura do Projeto
 
+```text
 dominus-gestor/
-├── docker-compose.yml # Orquestração do PostgreSQL e Aplicação Java
-├── Dockerfile # Build multi-stage (Maven + JRE)
-├── pom.xml # Configurações do Maven e dependências
-└── src/
-└── main/
-├── java/br/com/dominus/
-│ ├── Main.java # Entrypoint HTTP Server com Virtual Threads
-│ ├── config/ # HikariCP Pool e Filtros de Segurança
-│ ├── controller/ # Handlers REST (Auth, Clientes, Lançamentos, Relatórios)
-│ └── service/ # Serviços para MFA (TOTP) e JasperReports
-└── resources/
-├── db/
-│ └── schema.sql # Script DDL com RBAC e suporte a MFA
-├── reports/ # Templates de Relatórios do Jaspersoft Studio (.jrxml)
-└── webapp/ # Frontend SPA (HTML5, CSS3 e JS Vanilla)
+├── 📄 docker-compose.yml             # Orquestração do PostgreSQL e Aplicação Java
+├── 📄 Dockerfile                     # Build multi-stage (Maven + Temurin JRE)
+├── 📄 pom.xml                        # Configurações do Maven e dependências
+└── 📁 src/
+    └── 📁 main/
+        ├── 📁 java/br/com/dominus/
+        │   ├── 📄 Main.java          # Entrypoint HTTP Server (Virtual Threads)
+        │   ├── 📁 config/            # Pool HikariCP e Filtros de Segurança
+        │   ├── 📁 controller/        # Handlers REST (Auth, Clientes, Financeiro, Relatórios)
+        │   ├── 📁 dao/               # Data Access Objects (JDBC Puro)
+        │   └── 📁 service/           # Serviços para MFA (TOTP) e JasperReports Engine
+        └── 📁 resources/
+            ├── 📁 db/
+            │   └── 📄 schema.sql     # Script DDL com RBAC e tabelas MFA
+            ├── 📁 reports/           # Templates de Relatórios (.jrxml) do Jaspersoft Studio
+            └── 📁 webapp/            # Frontend SPA (HTML5, CSS3, JS Vanilla)
+                ├── 📄 index.html     # Tela de Login com suporte a MFA
+                ├── 📄 admin.html     # Painel Administrador
+                ├── 📄 gerente.html   # Painel Gerencial e Exportador
+                ├── 📄 sistema.html   # Módulo de Cadastro
+                ├── 📁 css/
+                │   └── 📄 style.css  # Estilização
+                └── 📁 js/
+                    ├── 📄 app.js      # Rotas e Interceptador
+                    ├── 📄 auth.js     # Lógica MFA / TOTP
+                    └── 📄 reports.js  # Gerenciador de Downloads
 
 ---
 
