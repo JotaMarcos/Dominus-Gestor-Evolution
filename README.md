@@ -1,141 +1,43 @@
-# Dominus Gestor - Sistema Web de Gestão Financeira e MFA
+# Dominus Gestor Evolution
 
-O **Dominus Gestor** é uma aplicação web corporativa de alta performance desenvolvida para gestão financeira, controle de clientes e fornecedores, e geração de relatórios gerenciais em múltiplos formatos.
+Aplicação web em português do Brasil para gestão financeira, clientes, fornecedores, usuários, MFA e relatórios gerenciais.
 
-Projetado com Quarkus 3 e Java 21, o sistema usa RESTEasy Reactive, CDI e o pool Agroal para entregar uma aplicação leve e eficiente.
+O backend usa Quarkus 3.27, Java 21, REST, CDI e pool Agroal. O frontend usa HTML, CSS e JavaScript próprios, sem ícones, imagens ou dependências visuais de frameworks externos.
 
 ---
 
-## 🛠️ Tecnologias Utilizadas
+## Tecnologias
 
 ### **Backend & Infraestrutura**
 
-- **Quarkus 3**: API REST reativa, CDI e empacotamento fast-jar.
+- **Quarkus 3.27**: API REST, CDI e empacotamento fast-jar.
 - **PostgreSQL 16**: Banco de dados relacional com modelagem para RBAC e MFA.
 - **Agroal**: Pool de conexões JDBC gerenciado pelo Quarkus.
 - **JasperReports Engine (v7.0.7)**: Motor de relatórios para exportação em **PDF, XLSX, DOCX, CSV e TXT**.
-- **Google Authenticator (TOTP)**: Suporte nativo à Autenticação Multifator (2FA/MFA).
-- **Docker & Docker Compose**: Containerização completa da aplicação e do banco de dados com build multi-estágio (_multi-stage build_).
-- **Apache Maven**: Gerenciamento de dependências e empacotamento Quarkus fast-jar.
+- **Google Authenticator (TOTP)**: autenticação multifator.
+- **Docker e Docker Compose**: PostgreSQL e aplicação em containers.
+- **Apache Maven**: dependências, testes e empacotamento Quarkus fast-jar.
 
 ### **Frontend**
 
 - **HTML5 & CSS3 Moderno**: Interface limpa, responsiva e otimizada.
-- **JavaScript (Vanilla)**: Manipulação nativa do DOM, integração via `fetch` API e gerenciamento de downloads sem dependências externas.
+- **JavaScript (Vanilla)**: integração via API `fetch`, sem dependências externas.
 
 ---
 
-## ✨ Principais Funcionalidades
+## Funcionalidades
 
-- 🔒 **Autenticação & Segurança Robustas**:
-  - Controle de Acesso Baseado em Funções (**RBAC**) com perfis de `ADMINISTRADOR`, `GERENTE` e `OPERADOR`.
-  - Autenticação Multifator (**MFA / 2FA**) configurável via TOTP (Google Authenticator / Authy).
-- 💼 **Gestão de Clientes & Fornecedores**:
-  - Cadastro completo de dados empresariais (CNPJ, Inscrição Estadual, Contatos, Endereço).
-- 💰 **Módulo Financeiro & Fluxo de Caixa**:
-  - Controle de lançamentos (receitas/despesas), categorização com auto-relacionamento e gestão de contas bancárias.
-- 📊 **Central de Relatórios Multiformato (JasperReports)**:
-  - Exportação dinâmica de demonstrativos e listagens nos formatos **PDF, Excel (XLSX), Word (DOCX), CSV e TXT**.
+- Login por identificador ou e-mail.
+- Senhas armazenadas somente como hash BCrypt.
+- Perfis `ADMINISTRADOR`, `GERENTE` e `OPERADOR`.
+- Cadastro público restrito a usuários `OPERADOR`.
+- Administrador inicial criado exclusivamente via banco de dados.
+- Clientes, fornecedores e lançamentos financeiros.
+- Relatórios em PDF, XLSX, DOCX, CSV e TXT.
 
 ---
 
-## 📂 Estrutura do Projeto
-
-```text
-dominus-gestor-evolution/
-├── 📄 docker-compose.yml             # Orquestração do PostgreSQL e Aplicação Java
-├── 📄 Dockerfile                     # Build multi-stage (Maven + Temurin JRE)
-├── 📁 backend/
-│   ├── 📄 pom.xml                    # Configurações do Maven e dependências
-│   └── 📁 src/
-│       └── 📁 main/
-│           ├── 📁 java/br/com/dominus/
-        │   ├── 📁 config/            # Configuração de persistência e aplicação
-        │   ├── 📁 controller/        # Recursos REST (Auth, Clientes, Financeiro, Relatórios)
-      │   └── 📁 service/           # Serviços para MFA (TOTP) e JasperReports Engine
-      └── 📁 resources/
-        ├── 📁 db/             # Script DDL com RBAC e tabelas MFA
-        └── 📁 reports/        # Templates de Relatórios (.jrxml)
-└── 📁 frontend/                       # Frontend SPA (HTML5, CSS3, JS Vanilla)
-  ├── 📄 index.html                  # Tela de Login com suporte a MFA
-  ├── 📄 admin.html                  # Painel Administrador
-  ├── 📄 gerente.html                # Painel Gerencial e Exportador
-  ├── 📄 sistema.html                # Módulo de Cadastro
-  ├── 📁 css/                        # Estilização
-  └── 📁 js/                         # Lógica MFA e relatórios
-```
-
----
-
-## 🚀 Como Executar o Projeto
-
-### Pré-requisitos
-
-- **Docker** e **Docker Compose** instalados.
-
-### Passos para Execução
-
-1. **Clonar o repositório:**
-   git clone https://github.com/JotaMarcos/Dominus-Gestor-Evolution.git
-   cd dominus-gestor-evolution
-
-2. **Subir os containers da Aplicação e do PostgreSQL:**
-   cp .env.example .env
-   mkdir -p secrets
-   printf '%s\n' 'defina-uma-senha-forte' > secrets/postgres_password.txt
-   docker compose up --build -d
-
-3. **Acessar a Aplicação:**
-
-- **Web UI:** [http://localhost:8080](http://localhost:8080)
-- **PostgreSQL:** `localhost:5432` _(Database: `dominus_db` | User: `dominus`)_
-
-O backend Quarkus serve o frontend diretamente em `META-INF/resources`, mantendo a aplicação organizada exclusivamente nos diretórios `backend/` e `frontend/`.
-
-### Execução local sem Docker
-
-No Windows, execute `start-dev.bat` ou `start-dev.ps1`. O script detecta automaticamente o Docker: com Docker, sobe o Compose completo; sem Docker, inicia o Quarkus no perfil `dev` com um banco H2 temporário compatível com PostgreSQL.
-
-No modo local sem Docker, use `admin@dominus.com.br` com a senha `Dominus@Dev2026`. Essa conta é criada apenas no H2 temporário do perfil `dev` e não é aplicada ao PostgreSQL de produção.
-
----
-
-## 👨‍💻 Autor
-
-Desenvolvido por **[João Marcos Aires Duarte](https://github.com/JotaMarcos)**.
-
----
-
-## Acesso e Cadastro de Usuários
-
-O administrador inicial é criado exclusivamente pelo banco de dados:
-
-- Login: `Admin`
-- E-mail: `admin@dominus.com.br`
-- Senha: `Toor#@!1439$10`
-
-A senha nunca é gravada em texto puro: o banco armazena somente o hash BCrypt. A tela `cadastro.html` permite criar usuários do perfil `OPERADOR`; a API não permite criar administradores pela interface.
-
-## Execução Local Completa
-
-Na raiz do projeto, no Windows, execute:
-
-```powershell
-.\start-dev.ps1
-```
-
-O script verifica o Docker automaticamente. Com Docker disponível, executa `docker compose up --build`, sobe PostgreSQL e a aplicação. Sem Docker, executa Quarkus no perfil `dev`, usa H2 temporário compatível com PostgreSQL e carrega o schema e o usuário administrador de desenvolvimento.
-
-Também é possível usar `start-dev.bat`. Para executar manualmente o backend, entre em `backend/` antes de chamar Maven:
-
-```powershell
-cd backend
-mvn quarkus:dev -Dquarkus.profile=dev -Dquarkus.analytics.disabled=true
-```
-
-Não execute Maven na raiz, pois o `pom.xml` está em `backend/`.
-
-## Estrutura Atual
+## Estrutura do Projeto
 
 ```text
 dominus-gestor-evolution/
@@ -165,10 +67,69 @@ dominus-gestor-evolution/
 └── start-dev.ps1
 ```
 
-## Banco de Dados
+---
 
-Em produção, configure `DB_URL`, `DB_USER` e `DB_PASS`, ou use `DB_PASS_FILE` no Docker. O PostgreSQL é o banco oficial da aplicação e o Quarkus gerencia o pool Agroal. O H2 existe somente para desenvolvimento sem Docker.
+## Como Executar Localmente
 
-## Identidade Visual
+### Pré-requisitos
 
-Toda a interface e sua escrita estão em português do Brasil. O projeto não adiciona logos, ícones, imagens ou fontes de frameworks externos; os estilos pertencem à própria aplicação.
+- Java 21 ou superior.
+- Maven 3.9 ou Maven Wrapper.
+- Docker é opcional.
+
+### Com Docker
+
+Na raiz de `dominus-gestor-evolution`, crie `secrets/postgres_password.txt` com uma senha forte e execute:
+
+```bash
+docker compose up --build
+```
+
+Aplicação: [http://localhost:8080](http://localhost:8080)
+
+PostgreSQL: `localhost:5432`, banco `dominus_db`, usuário `dominus`.
+
+O backend Quarkus serve o frontend diretamente em `META-INF/resources`, mantendo a aplicação organizada exclusivamente nos diretórios `backend/` e `frontend/`.
+
+### Sem Docker
+
+Na raiz do projeto, no Windows, execute `start-dev.bat` ou:
+
+```powershell
+.\start-dev.ps1
+```
+
+O script detecta o Docker automaticamente. Sem Docker, entra em `backend/`, inicia o Quarkus no perfil `dev` e usa H2 temporário compatível com PostgreSQL. O frontend é servido em [http://localhost:8080](http://localhost:8080).
+
+Não execute Maven na raiz: o `pom.xml` fica em `backend/`.
+
+### Execução manual
+
+```powershell
+cd backend
+mvn quarkus:dev -Dquarkus.profile=dev -Dquarkus.analytics.disabled=true
+```
+
+### Credenciais locais
+
+O administrador é criado pelo banco de dados, nunca pela tela:
+
+- Login: `Admin`
+- E-mail: `admin@dominus.com.br`
+- Senha: `Toor#@!1439$10`
+
+A senha é gravada somente como BCrypt. A tela `cadastro.html` permite criar usuários `OPERADOR`; não é possível criar administrador pela interface.
+
+### Banco de dados
+
+Em produção, configure `DB_URL`, `DB_USER` e `DB_PASS`, ou `DB_PASS_FILE` no Docker. O PostgreSQL é o banco oficial e o Quarkus gerencia o pool Agroal. O H2 é usado somente no perfil local `dev`.
+
+### Identidade visual
+
+A aplicação e seus textos estão em português do Brasil. O frontend usa somente estilos e elementos próprios do Dominus Gestor, sem logos, imagens, ícones ou fontes de frameworks externos.
+
+---
+
+## Autor
+
+Desenvolvido por **[João Marcos Aires Duarte](https://github.com/JotaMarcos)**.
