@@ -39,6 +39,9 @@ Projetado com uma arquitetura nativa em Java 21, o sistema dispensa frameworks p
 
 ---
 ## 📂 Estrutura do Projeto
+## 📂 Estrutura do Projeto
+
+```text
 dominus-gestor/
 ├── 📄 docker-compose.yml             # Orquestração do PostgreSQL e Aplicação Java
 ├── 📄 Dockerfile                     # Build multi-stage (Maven + Temurin JRE)
