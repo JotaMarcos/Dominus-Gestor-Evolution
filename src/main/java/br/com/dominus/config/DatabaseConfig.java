@@ -11,6 +11,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class DatabaseConfig {
+    private static volatile HikariDataSource dataSource;
+
     private static HikariDataSource dataSource() {
         HikariConfig config = new HikariConfig();
         String dbUrl = requiredEnvironment("DB_URL");
