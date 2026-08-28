@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="relatorio_financeiro" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+    <queryString>
+        <![CDATA[SELECT l.id, l.descricao, l.valor, l.data_vencimento, l.situacao, c.nome as categoria FROM lancamento l JOIN categoria c ON l.id_categoria = c.id ORDER BY l.data_vencimento DESC]]>
+    </queryString>
+    <field name="id" class="java.lang.Integer"/>
+    <field name="descricao" class="java.lang.String"/>
+    <field name="valor" class="java.math.BigDecimal"/>
+    <field name="situacao" class="java.lang.String"/>
+    <field name="categoria" class="java.lang.String"/>
+    <title>
+        <band height="50">
+            <staticText>
+                <reportElement x="0" y="10" width="555" height="30"/>
+                <textElement textAlignment="Center" verticalAlignment="Middle">
+                    <font size="18" isBold="true"/>
+                </textElement>
+                <text><![CDATA[DOMINUS GESTOR - FLUXO DE CAIXA E LANÇAMENTOS]]></text>
+            </staticText>
+        </band>
+    </title>
+    <columnHeader>
+        <band height="20">
+            <staticText><reportElement x="0" y="0" width="50" height="20"/><text><![CDATA[ID]]></text></staticText>
+            <staticText><reportElement x="50" y="0" width="220" height="20"/><text><![CDATA[Descrição]]></text></staticText>
+            <staticText><reportElement x="270" y="0" width="100" height="20"/><text><![CDATA[Categoria]]></text></staticText>
+            <staticText><reportElement x="370" y="0" width="90" height="20"/><text><![CDATA[Valor (R$)]]></text></staticText>
+            <staticText><reportElement x="460" y="0" width="95" height="20"/><text><![CDATA[Situação]]></text></staticText>
+        </band>
+    </columnHeader>
+    <detail>
+        <band height="20">
+            <textField><reportElement x="0" y="0" width="50" height="20"/><textFieldExpression><![CDATA[$F{id}]]></textFieldExpression></textField>
+            <textField><reportElement x="50" y="0" width="220" height="20"/><textFieldExpression><![CDATA[$F{descricao}]]></textFieldExpression></textField>
+            <textField><reportElement x="270" y="0" width="100" height="20"/><textFieldExpression><![CDATA[$F{categoria}]]></textFieldExpression></textField>
+            <textField><reportElement x="370" y="0" width="90" height="20"/><textFieldExpression><![CDATA[$F{valor}]]></textFieldExpression></textField>
+            <textField><reportElement x="460" y="0" width="95" height="20"/><textFieldExpression><![CDATA[$F{situacao}]]></textFieldExpression></textField>
+        </band>
+    </detail>
+</jasperReport>

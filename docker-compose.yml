@@ -1,0 +1,44 @@
+services:
+  postgres-db:
+    image: postgres:16-alpine
+    container_name: dominus_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-dominus_db}
+      POSTGRES_USER: ${POSTGRES_USER:-dominus}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./src/main/resources/db/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    secrets:
+      - postgres_password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  dominus-app:
+    build: .
+    container_name: dominus_app
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      DB_URL: jdbc:postgresql://postgres-db:5432/${POSTGRES_DB:-dominus_db}
+      DB_USER: ${POSTGRES_USER:-dominus}
+      DB_PASS_FILE: /run/secrets/postgres_password
+    secrets:
+      - postgres_password
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+
+secrets:
+  postgres_password:
+    file: ./secrets/postgres_password.txt

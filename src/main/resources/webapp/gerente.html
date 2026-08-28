@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Dominus Gestor - Painel Gerente</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <h3>Dominus Gestor</h3>
+            <span class="badge gerente">GERENTE</span>
+            <nav>
+                <a href="gerente.html" class="active">Dashboard Gerencial</a>
+                <a href="sistema.html">Clientes & Financeiro</a>
+            </nav>
+        </aside>
+        <main class="content">
+            <header>
+                <h2>Visão Gerencial e Exportação de Relatórios Jasper</h2>
+            </header>
+            <section class="card">
+                <h3>Central de Exportação de Relatórios</h3>
+                <div class="reports-grid">
+                    <button onclick="exportar('relatorio_clientes', 'pdf')" class="btn-report pdf">Clientes (PDF)</button>
+                    <button onclick="exportar('relatorio_clientes', 'xlsx')" class="btn-report xlsx">Clientes (XLSX)</button>
+                    <button onclick="exportar('relatorio_financeiro', 'pdf')" class="btn-report pdf">Financeiro (PDF)</button>
+                    <button onclick="exportar('relatorio_financeiro', 'xlsx')" class="btn-report xlsx">Financeiro (XLSX)</button>
+                    <button onclick="exportar('relatorio_financeiro', 'docx')" class="btn-report docx">Financeiro (DOCX)</button>
+                    <button onclick="exportar('relatorio_financeiro', 'csv')" class="btn-report csv">Financeiro (CSV)</button>
+                    <button onclick="exportar('relatorio_financeiro', 'txt')" class="btn-report txt">Financeiro (TXT)</button>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="js/reports.js"></script>
+</body>
+</html>

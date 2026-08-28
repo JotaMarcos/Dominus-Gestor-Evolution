@@ -1,0 +1,9 @@
+target/
+*.log
+.env
+.env.*
+!.env.example
+secrets/*
+!secrets/.gitkeep
+.idea/
+.vscode/

@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Dominus Gestor - Painel Administrador</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div class="app-layout">
+      <aside class="sidebar">
+        <h3>Dominus Gestor</h3>
+        <span class="badge admin">ADMINISTRADOR</span>
+        <nav>
+          <a href="admin.html" class="active">Usuários & MFA</a>
+          <a href="gerente.html">Dashboard Gerencial</a>
+          <a href="sistema.html">Clientes & Financeiro</a>
+        </nav>
+      </aside>
+      <main class="content">
+        <header>
+          <h2>Gestão de Usuários e Segurança MFA / 2FA</h2>
+        </header>
+        <section class="card">
+          <h3>Usuários Cadastrados no Sistema</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nome</th>
+                <th>Email</th>
+                <th>Perfil</th>
+                <th>MFA (2FA/3FA)</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1</td>
+                <td>João Marcos Duarte</td>
+                <td>admin@dominus.com.br</td>
+                <td>ADMINISTRADOR</td>
+                <td><span class="badge success">Habilitado</span></td>
+                <td>
+                  <button onclick="toggleMFA(1)" class="btn-sm">
+                    Alterar MFA
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+      </main>
+    </div>
+    <script src="js/admin.js"></script>
+  </body>
+</html>
