@@ -39,8 +39,6 @@ Projetado com uma arquitetura nativa em Java 21, o sistema dispensa frameworks p
 
 ---
 ## 📂 Estrutura do Projeto
-
-```text
 dominus-gestor/
 ├── 📄 docker-compose.yml             # Orquestração do PostgreSQL e Aplicação Java
 ├── 📄 Dockerfile                     # Build multi-stage (Maven + Temurin JRE)
@@ -72,38 +70,27 @@ dominus-gestor/
 ---
 
 ## 🚀 Como Executar o Projeto
-
 ### Pré-requisitos
-
 - **Docker** e **Docker Compose** instalados.
 
 ### Passos para Execução
-
 1. **Clonar o repositório:**
-
-```bash
 git clone https://github.com/JotaMarcos/dominus-gestor.git
 cd dominus-gestor
-```
 
 2. **Subir os containers da Aplicação e do PostgreSQL:**
-
-```bash
 cp .env.example .env
 mkdir -p secrets
 printf '%s\n' 'defina-uma-senha-forte' > secrets/postgres_password.txt
 docker compose up --build -d
-```
 
 3. **Acessar a Aplicação:**
-
 - **Web UI:** [http://localhost:8080](http://localhost:8080)
 - **PostgreSQL:** `localhost:5432` _(Database: `dominus_db` | User: `dominus`)_
 
 ---
 
 ## 👨‍💻 Autor
-
 Desenvolvido por **[João Marcos Aires Duarte](https://github.com/JotaMarcos)**.
 
 ---
