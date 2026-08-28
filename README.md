@@ -38,62 +38,66 @@ Projetado com uma arquitetura nativa em Java 21, o sistema dispensa frameworks p
   - Exportação dinâmica de demonstrativos e listagens nos formatos **PDF, Excel (XLSX), Word (DOCX), CSV e TXT**.
 
 ---
+
 ## 📂 Estrutura do Projeto
+
 ## 📂 Estrutura do Projeto
 
 ```text
-dominus-gestor/
+dominus-gestor-evolution/
 ├── 📄 docker-compose.yml             # Orquestração do PostgreSQL e Aplicação Java
 ├── 📄 Dockerfile                     # Build multi-stage (Maven + Temurin JRE)
-├── 📄 pom.xml                        # Configurações do Maven e dependências
-└── 📁 src/
-    └── 📁 main/
-        ├── 📁 java/br/com/dominus/
+├── 📁 backend/
+│   ├── 📄 pom.xml                    # Configurações do Maven e dependências
+│   └── 📁 src/
+│       └── 📁 main/
+│           ├── 📁 java/br/com/dominus/
         │   ├── 📄 Main.java          # Entrypoint HTTP Server (Virtual Threads)
         │   ├── 📁 config/            # Pool HikariCP e Filtros de Segurança
         │   ├── 📁 controller/        # Handlers REST (Auth, Clientes, Financeiro, Relatórios)
         │   ├── 📁 dao/               # Data Access Objects (JDBC Puro)
-        │   └── 📁 service/           # Serviços para MFA (TOTP) e JasperReports Engine
-        └── 📁 resources/
-            ├── 📁 db/
-            │   └── 📄 schema.sql     # Script DDL com RBAC e tabelas MFA
-            ├── 📁 reports/           # Templates de Relatórios (.jrxml) do Jaspersoft Studio
-            └── 📁 webapp/            # Frontend SPA (HTML5, CSS3, JS Vanilla)
-                ├── 📄 index.html     # Tela de Login com suporte a MFA
-                ├── 📄 admin.html     # Painel Administrador
-                ├── 📄 gerente.html   # Painel Gerencial e Exportador
-                ├── 📄 sistema.html   # Módulo de Cadastro
-                ├── 📁 css/
-                │   └── 📄 style.css  # Estilização
-                └── 📁 js/
-                    ├── 📄 app.js      # Rotas e Interceptador
-                    ├── 📄 auth.js     # Lógica MFA / TOTP
-                    └── 📄 reports.js  # Gerenciador de Downloads
+    │   └── 📁 service/           # Serviços para MFA (TOTP) e JasperReports Engine
+      └── 📁 resources/
+        ├── 📁 db/             # Script DDL com RBAC e tabelas MFA
+        └── 📁 reports/        # Templates de Relatórios (.jrxml)
+└── 📁 frontend/                       # Frontend SPA (HTML5, CSS3, JS Vanilla)
+  ├── 📄 index.html                  # Tela de Login com suporte a MFA
+  ├── 📄 admin.html                  # Painel Administrador
+  ├── 📄 gerente.html                # Painel Gerencial e Exportador
+  ├── 📄 sistema.html                # Módulo de Cadastro
+  ├── 📁 css/                        # Estilização
+  └── 📁 js/                         # Lógica MFA e relatórios
 ```
+
 ---
 
 ## 🚀 Como Executar o Projeto
+
 ### Pré-requisitos
+
 - **Docker** e **Docker Compose** instalados.
 
 ### Passos para Execução
+
 1. **Clonar o repositório:**
-git clone https://github.com/JotaMarcos/dominus-gestor.git
-cd dominus-gestor
+   git clone https://github.com/JotaMarcos/Dominus-Gestor-Evolution.git
+   cd dominus-gestor-evolution
 
 2. **Subir os containers da Aplicação e do PostgreSQL:**
-cp .env.example .env
-mkdir -p secrets
-printf '%s\n' 'defina-uma-senha-forte' > secrets/postgres_password.txt
-docker compose up --build -d
+   cp .env.example .env
+   mkdir -p secrets
+   printf '%s\n' 'defina-uma-senha-forte' > secrets/postgres_password.txt
+   docker compose up --build -d
 
 3. **Acessar a Aplicação:**
+
 - **Web UI:** [http://localhost:8080](http://localhost:8080)
 - **PostgreSQL:** `localhost:5432` _(Database: `dominus_db` | User: `dominus`)_
 
 ---
 
 ## 👨‍💻 Autor
+
 Desenvolvido por **[João Marcos Aires Duarte](https://github.com/JotaMarcos)**.
 
 ---

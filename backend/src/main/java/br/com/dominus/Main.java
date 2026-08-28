@@ -38,7 +38,7 @@ public class Main {
             server.createContext("/", new StaticFileHandler());
 
             System.out.println("=========================================================");
-            System.out.println("   DOMINUS GESTOR - JAVA 21 WEB SERVER INICIADO          ");
+            System.out.println("   DOMINUS GESTOR - JAVA 25 WEB SERVER INICIADO          ");
             System.out.println("   Servidor de Alta Performance: http://localhost:" + port);
             System.out.println("=========================================================");
 
