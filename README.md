@@ -96,6 +96,8 @@ O backend Quarkus serve o frontend diretamente em `META-INF/resources`, mantendo
 
 No Windows, execute `start-dev.bat` ou `start-dev.ps1`. O script detecta automaticamente o Docker: com Docker, sobe o Compose completo; sem Docker, inicia o Quarkus no perfil `dev` com um banco H2 temporário compatível com PostgreSQL.
 
+No modo local sem Docker, use `admin@dominus.com.br` com a senha `Dominus@Dev2026`. Essa conta é criada apenas no H2 temporário do perfil `dev` e não é aplicada ao PostgreSQL de produção.
+
 ---
 
 ## 👨‍💻 Autor

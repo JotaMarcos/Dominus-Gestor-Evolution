@@ -2,6 +2,10 @@ $ErrorActionPreference = 'Stop'
 
 Set-Location $PSScriptRoot
 
+if ($PSVersionTable.PSVersion.Major -ge 5 -and $env:JAVA_HOME -like '*jdk-25*') {
+    $env:MAVEN_OPTS = "$env:MAVEN_OPTS --add-opens=java.base/java.lang=ALL-UNNAMED"
+}
+
 $dockerAvailable = $false
 try {
     docker info --format '{{.ServerVersion}}' *> $null
@@ -46,7 +50,7 @@ if ($null -eq $maven) {
 
 Push-Location backend
 try {
-    & $maven.Source quarkus:dev '-Dquarkus.profile=dev'
+    & $maven.Source quarkus:dev '-Dquarkus.profile=dev' '-Dquarkus.analytics.disabled=true'
     exit $LASTEXITCODE
 }
 finally {
