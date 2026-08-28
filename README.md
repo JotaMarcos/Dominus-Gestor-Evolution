@@ -69,7 +69,7 @@ dominus-gestor/
                     ├── 📄 app.js      # Rotas e Interceptador
                     ├── 📄 auth.js     # Lógica MFA / TOTP
                     └── 📄 reports.js  # Gerenciador de Downloads
-
+```
 ---
 
 ## 🚀 Como Executar o Projeto
