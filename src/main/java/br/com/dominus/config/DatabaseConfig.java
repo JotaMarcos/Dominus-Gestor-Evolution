@@ -11,9 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class DatabaseConfig {
-    private static HikariDataSource dataSource;
-
-    static {
+    private static HikariDataSource dataSource() {
         HikariConfig config = new HikariConfig();
         String dbUrl = requiredEnvironment("DB_URL");
         String dbUser = requiredEnvironment("DB_USER");
@@ -27,10 +25,17 @@ public class DatabaseConfig {
         config.setIdleTimeout(30000);
         config.setPoolName("DominusHikariPool");
 
-        dataSource = new HikariDataSource(config);
+        return new HikariDataSource(config);
     }
 
     public static Connection getConnection() throws SQLException {
+        if (dataSource == null) {
+            synchronized (DatabaseConfig.class) {
+                if (dataSource == null) {
+                    dataSource = dataSource();
+                }
+            }
+        }
         return dataSource.getConnection();
     }
 
