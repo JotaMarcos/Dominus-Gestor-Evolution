@@ -1,4 +1,15 @@
 let mfaPending = false;
+let pendingRole = null;
+
+const HOME_BY_ROLE = {
+  ADMINISTRADOR: "admin.html",
+  GERENTE: "gerente.html",
+  OPERADOR: "sistema.html",
+};
+
+function irParaTelaInicial(role) {
+  window.location.href = HOME_BY_ROLE[role] || "sistema.html";
+}
 
 document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -21,6 +32,7 @@ document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
     }
     if (data.mfaRequired && !mfaPending) {
       mfaPending = true;
+      pendingRole = data.role;
       document.getElementById("mfaSection").classList.remove("hidden");
       document.getElementById("mfaCode").required = true;
       document.getElementById("btnLogin").textContent = "Validar código";
@@ -29,7 +41,7 @@ document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
     if (mfaPending && data.status !== "VALIDATED") {
       throw new Error("Não foi possível validar o código MFA.");
     }
-    window.location.href = "gerente.html";
+    irParaTelaInicial(mfaPending ? pendingRole : data.role);
   } catch (error) {
     document.getElementById("loginError").textContent = error.message;
   }

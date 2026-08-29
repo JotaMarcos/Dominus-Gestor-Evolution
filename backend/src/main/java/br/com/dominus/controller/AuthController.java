@@ -1,6 +1,9 @@
 package br.com.dominus.controller;
 
+import br.com.dominus.security.SessionCookieFactory;
+import br.com.dominus.security.TokenService;
 import com.fasterxml.jackson.databind.JsonNode;
+import jakarta.annotation.security.PermitAll;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
@@ -17,7 +20,6 @@ import java.sql.ResultSet;
 import java.util.Map;
 
 @Path("/api/auth")
-@Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 public class AuthController {
     @Inject
@@ -26,8 +28,16 @@ public class AuthController {
     @Inject
     br.com.dominus.service.MfaService mfaService;
 
+    @Inject
+    TokenService tokenService;
+
+    @Inject
+    SessionCookieFactory sessionCookies;
+
     @POST
     @Path("/login")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @PermitAll
     public Response login(JsonNode request) {
         String email = text(request, "email");
         String login = text(request, "login");
@@ -37,7 +47,7 @@ public class AuthController {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(Map.of("error", "E-mail e senha são obrigatórios")).build();
         }
-        String sql = "SELECT u.senha_hash, u.mfa_habilitado, p.nome FROM usuario u JOIN perfil p ON p.id = u.id_perfil "
+        String sql = "SELECT u.email, u.senha_hash, u.mfa_habilitado, p.nome FROM usuario u JOIN perfil p ON p.id = u.id_perfil "
                 + "WHERE (lower(u.email) = lower(?) OR lower(u.login) = lower(?)) AND u.situacao = 'ATIVO'";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -48,8 +58,15 @@ public class AuthController {
                     return Response.status(Response.Status.UNAUTHORIZED)
                             .entity(Map.of("error", "Credenciais inválidas")).build();
                 }
-                return Response.ok(Map.of("status", "SUCCESS", "role", result.getString("nome"), "mfaRequired",
-                        result.getBoolean("mfa_habilitado"))).build();
+                String role = result.getString("nome");
+                boolean mfaRequired = result.getBoolean("mfa_habilitado");
+                if (mfaRequired) {
+                    return Response.ok(Map.of("status", "SUCCESS", "role", role, "mfaRequired", true)).build();
+                }
+                String token = tokenService.issue(result.getString("email"), role);
+                return Response.ok(Map.of("status", "SUCCESS", "role", role, "mfaRequired", false))
+                        .header("Set-Cookie", sessionCookies.issue(token))
+                        .build();
             }
         } catch (Exception exception) {
             return unavailable();
@@ -58,6 +75,7 @@ public class AuthController {
 
     @POST
     @Path("/mfa/toggle")
+    @PermitAll
     public Response toggleMfa() {
         return Response.status(Response.Status.NOT_IMPLEMENTED)
                 .entity(Map.of("error", "Operação requer usuário autenticado")).build();
@@ -65,6 +83,8 @@ public class AuthController {
 
     @POST
     @Path("/mfa/verify")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @PermitAll
     public Response verifyMfa(JsonNode request) {
         String email = text(request, "email");
         String code = text(request, "code");
@@ -72,7 +92,8 @@ public class AuthController {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(Map.of("error", "E-mail e código MFA são obrigatórios")).build();
         }
-        String sql = "SELECT mfa_secret FROM usuario WHERE lower(email) = lower(?) AND situacao = 'ATIVO' AND mfa_habilitado = TRUE";
+        String sql = "SELECT u.mfa_secret, p.nome FROM usuario u JOIN perfil p ON p.id = u.id_perfil "
+                + "WHERE lower(u.email) = lower(?) AND u.situacao = 'ATIVO' AND u.mfa_habilitado = TRUE";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, email);
@@ -82,11 +103,23 @@ public class AuthController {
                     return Response.status(Response.Status.UNAUTHORIZED).entity(Map.of("error", "Código MFA inválido"))
                             .build();
                 }
-                return Response.ok(Map.of("status", "VALIDATED")).build();
+                String token = tokenService.issue(email, result.getString("nome"));
+                return Response.ok(Map.of("status", "VALIDATED"))
+                        .header("Set-Cookie", sessionCookies.issue(token))
+                        .build();
             }
         } catch (Exception exception) {
             return unavailable();
         }
+    }
+
+    @POST
+    @Path("/logout")
+    @PermitAll
+    public Response logout() {
+        return Response.ok(Map.of("status", "LOGGED_OUT"))
+                .header("Set-Cookie", sessionCookies.clear())
+                .build();
     }
 
     private static String text(JsonNode request, String field) {

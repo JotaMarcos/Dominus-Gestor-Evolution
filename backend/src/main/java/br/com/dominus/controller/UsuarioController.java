@@ -1,6 +1,7 @@
 package br.com.dominus.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import jakarta.annotation.security.PermitAll;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
@@ -23,6 +24,7 @@ public class UsuarioController {
     DataSource dataSource;
 
     @POST
+    @PermitAll
     public Response cadastrar(JsonNode request) {
         String nome = text(request, "nome");
         String login = text(request, "login");

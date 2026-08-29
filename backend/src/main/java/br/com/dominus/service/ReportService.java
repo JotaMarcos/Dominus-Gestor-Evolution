@@ -42,7 +42,7 @@ public class ReportService {
             case CSV -> {
                 JRCsvExporter exporter = new JRCsvExporter();
                 exporter.setExporterInput(new SimpleExporterInput(jasperPrint));
-                exporter.setExporterOutput(new SimpleWriterExporterOutput(out));
+                exporter.setExporterOutput(new SimpleWriterExporterOutput(out, "UTF-8"));
                 exporter.exportReport();
             }
             case DOCX -> {
@@ -54,7 +54,11 @@ public class ReportService {
             case TXT -> {
                 JRTextExporter exporter = new JRTextExporter();
                 exporter.setExporterInput(new SimpleExporterInput(jasperPrint));
-                exporter.setExporterOutput(new SimpleWriterExporterOutput(out));
+                exporter.setExporterOutput(new SimpleWriterExporterOutput(out, "UTF-8"));
+                SimpleTextReportConfiguration configuration = new SimpleTextReportConfiguration();
+                configuration.setCharWidth(7f);
+                configuration.setCharHeight(11f);
+                exporter.setConfiguration(configuration);
                 exporter.exportReport();
             }
         }

@@ -1,0 +1,9 @@
+# Scripts executados dentro de containers Linux precisam de LF, nunca CRLF -
+# um shebang com \r quebra a execução (docker-entrypoint.sh já sofreu com isso).
+*.sh text eol=lf
+Dockerfile text eol=lf
+docker-entrypoint.sh text eol=lf
+
+# Scripts nativos do Windows mantêm CRLF, que é o padrão esperado por cmd.exe/PowerShell.
+*.bat text eol=crlf
+*.ps1 text eol=crlf

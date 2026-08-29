@@ -1,5 +1,6 @@
 package br.com.dominus.controller;
 
+import io.quarkus.security.Authenticated;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -9,6 +10,7 @@ import java.util.Map;
 
 @Path("/api/clientes")
 @Produces(MediaType.APPLICATION_JSON)
+@Authenticated
 public class ClienteController {
     @GET
     public List<Map<String, Object>> listar() {

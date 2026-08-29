@@ -1,6 +1,7 @@
 package br.com.dominus.controller;
 
 import br.com.dominus.service.ReportService;
+import io.quarkus.security.Authenticated;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
@@ -9,6 +10,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.jboss.logging.Logger;
 
 import javax.sql.DataSource;
 import java.io.ByteArrayOutputStream;
@@ -16,7 +18,10 @@ import java.sql.Connection;
 import java.util.HashMap;
 
 @Path("/api/relatorios/exportar")
+@Authenticated
 public class RelatorioController {
+    private static final Logger LOG = Logger.getLogger(RelatorioController.class);
+
     @Inject
     DataSource dataSource;
 
@@ -52,6 +57,7 @@ public class RelatorioController {
                     .header("Content-Disposition", "attachment; filename=" + report + "." + formatName.toLowerCase())
                     .build();
         } catch (Exception exception) {
+            LOG.error("Falha ao gerar relatório '" + report + "' no formato '" + formatName + "'", exception);
             return error(Response.Status.INTERNAL_SERVER_ERROR, "Falha ao gerar relatório");
         }
     }

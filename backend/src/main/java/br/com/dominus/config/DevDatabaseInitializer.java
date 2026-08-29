@@ -1,6 +1,6 @@
 package br.com.dominus.config;
 
-import io.quarkus.arc.profile.IfBuildProfile;
+import io.quarkus.arc.profile.UnlessBuildProfile;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
@@ -14,7 +14,7 @@ import java.sql.Connection;
 import java.sql.Statement;
 
 @ApplicationScoped
-@IfBuildProfile("dev")
+@UnlessBuildProfile("prod")
 public class DevDatabaseInitializer {
     @Inject
     DataSource dataSource;
