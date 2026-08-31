@@ -4,6 +4,8 @@ Aplicação web em português do Brasil para gestão financeira, clientes, forne
 
 O backend usa Quarkus 3.27, Java 21, REST, CDI e pool Agroal. O frontend usa HTML, CSS e JavaScript próprios, sem ícones, imagens ou dependências visuais de frameworks externos.
 
+> 📐 **Diagrama de arquitetura:** [infográfico completo](https://claude.ai/code/artifact/7d71ddc1-fa92-44b7-8e9c-9e46bdb47f6d) — fluxo da aplicação, autenticação/sessão, modelo de dados e topologia de deploy.
+
 ---
 
 ## Tecnologias
