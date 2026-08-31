@@ -14,7 +14,7 @@ body { background: #f4f6f9; color: #333; }
 .btn-primary:hover { background: #1d4ed8; }
 .hidden { display: none; }
 .app-layout { display: flex; min-height: 100vh; }
-.sidebar { width: 250px; background: #1e293b; color: white; padding: 1.5rem; display: flex; flex-direction: column; }
+.sidebar { width: 250px; background: #1e293b; color: white; padding: 1.5rem; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; flex-shrink: 0; }
 .sidebar h3 { font-size: 1.3rem; margin-bottom: 0.5rem; }
 .sidebar-brand { display: block; font-size: 1.3rem; font-weight: bold; color: white; text-decoration: none; margin-bottom: 0.5rem; }
 .sidebar-brand:hover { color: #cbd5e1; }

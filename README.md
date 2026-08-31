@@ -15,6 +15,7 @@ O backend usa Quarkus 3.27, Java 21, REST, CDI e pool Agroal. O frontend usa HTM
 - **Agroal**: Pool de conexões JDBC gerenciado pelo Quarkus.
 - **JasperReports Engine (v7.0.7)**: Motor de relatórios para exportação em **PDF, XLSX, DOCX, CSV e TXT**.
 - **Google Authenticator (TOTP)**: autenticação multifator.
+- **BCrypt (jbcrypt)**: hash de senhas, nunca armazenadas em texto puro.
 - **Docker e Docker Compose**: PostgreSQL e aplicação em containers.
 - **Apache Maven**: dependências, testes e empacotamento Quarkus fast-jar.
 
@@ -27,19 +28,43 @@ O backend usa Quarkus 3.27, Java 21, REST, CDI e pool Agroal. O frontend usa HTM
 
 ## Funcionalidades
 
-- Login por identificador ou e-mail.
+### Autenticação e segurança
+
+- Login por identificador (login) ou e-mail.
 - Senhas armazenadas somente como hash BCrypt.
 - Sessão autenticada por JWT assinado (RS256), entregue em cookie `HttpOnly`, `SameSite=Strict` (e `Secure` fora do perfil dev) — nunca exposto ao JavaScript do navegador.
 - Todos os endpoints de negócio exigem sessão válida; endpoints não anotados são negados por padrão (`quarkus.security.jaxrs.deny-unannotated-endpoints`).
+- Autenticação multifator (TOTP / Google Authenticator) verificada em `/api/auth/mfa/verify` antes da emissão da sessão, quando habilitada para o usuário.
+- **Recuperação de senha sem precisar da senha atual** (`recuperar-senha.html`): o usuário informa login ou e-mail cadastrado; se o MFA estiver habilitado, precisa confirmar também o código do Authenticator; em seguida define a nova senha (mínimo 8 caracteres). Não depende de envio de e-mail — toda a verificação é feita com dados já cadastrados no sistema.
 - Perfis `ADMINISTRADOR`, `GERENTE` e `OPERADOR`.
-- Menu lateral montado por perfil em todas as telas internas (`js/nav.js`), com atalho **Início** para a página inicial do perfil e botão **Sair**. O `ADMINISTRADOR` alterna livremente entre Usuários & MFA, Dashboard Gerencial e Clientes & Fornecedores a partir de qualquer página.
-- Cadastro público restrito a usuários `OPERADOR`.
-- Administrador inicial criado exclusivamente via banco de dados.
-- `GET /api/usuarios` lista os usuários cadastrados (nome, login, e-mail, perfil, situação e MFA), renderizado dinamicamente em `admin.html`.
-- `GET /api/clientes` lista clientes com paginação (10/20/50/100 por página, com botões primeira/anterior/próxima/última), ordenação crescente/decrescente por razão social ou CNPJ, e busca por nome do cliente — usando **Full-Text Search nativo do PostgreSQL** (`to_tsvector`/`plainto_tsquery`) quando o banco é PostgreSQL real; no perfil dev/test (H2, sem tsvector) a mesma API cai automaticamente para `ILIKE`, mantendo o comportamento idêntico para quem está testando sem Docker.
-- Relatórios em PDF, XLSX, DOCX, CSV e TXT, com o logotipo do Dominus Gestor Evolution no cabeçalho e personalização opcional por cliente (`?cliente=nome`) — disponível em `gerente.html` via campo "Personalizar por cliente".
+- Cadastro público (`cadastro.html`) restrito a usuários `OPERADOR`.
+- Administrador inicial criado exclusivamente via banco de dados (nunca pela interface).
 
 > **Status de segurança conhecido:** `/api/auth/mfa/toggle` ainda não está implementado (sempre responde `501`); a emissão de sessão após MFA já funciona (`/api/auth/mfa/verify`).
+
+### Navegação
+
+- Menu lateral montado por perfil em todas as telas internas (`js/nav.js`), com atalho **Início** para a página inicial do perfil e botão **Sair**.
+- A barra lateral é fixa na tela (`position: sticky`), então o botão **Sair** permanece sempre visível mesmo em páginas com listas longas (ex.: 5.000 clientes paginados).
+- O `ADMINISTRADOR` alterna livremente entre Usuários & MFA, Dashboard Gerencial e Clientes & Fornecedores a partir de qualquer página.
+
+### Usuários
+
+- `GET /api/usuarios` lista os usuários cadastrados (nome, login, e-mail, perfil, situação e MFA), renderizado dinamicamente em `admin.html`.
+- `POST /api/usuarios` cadastra um novo usuário `OPERADOR` (uso público, via `cadastro.html`).
+
+### Clientes & Fornecedores
+
+- `GET /api/clientes` lista clientes com:
+  - Paginação: 10 / 20 / 50 / 100 itens por página, com botões primeira, anterior, próxima e última página.
+  - Ordenação crescente/decrescente por razão social ou CNPJ.
+  - Busca por nome do cliente usando **Full-Text Search nativo do PostgreSQL** (`to_tsvector`/`plainto_tsquery` com índice GIN) quando o banco é PostgreSQL real. No perfil dev/test (H2, sem `tsvector`) a mesma API cai automaticamente para `ILIKE`, mantendo o comportamento idêntico para quem está testando sem Docker.
+- Tela `sistema.html` (módulo "Clientes & Fornecedores") consome esse endpoint via `clientes.js`.
+
+### Relatórios
+
+- Relatórios em PDF, XLSX, DOCX, CSV e TXT, com o logotipo do Dominus Gestor Evolution no cabeçalho.
+- Personalização opcional por cliente (`?cliente=nome`), disponível em `gerente.html` via campo "Personalizar por cliente" — filtra os dados do relatório para um único cliente.
 
 ---
 
@@ -53,6 +78,11 @@ dominus-gestor-evolution/
 │       ├── java/br/com/dominus/
 │       │   ├── config/          # Datasource e inicialização dev/test
 │       │   ├── controller/      # Recursos REST
+│       │   │   ├── AuthController.java       # login, MFA, logout, recuperação de senha
+│       │   │   ├── UsuarioController.java    # listagem e cadastro de usuários
+│       │   │   ├── ClienteController.java    # listagem paginada/ordenada/buscável de clientes
+│       │   │   ├── LancamentoController.java
+│       │   │   └── RelatorioController.java  # exportação de relatórios Jasper
 │       │   ├── security/        # Emissão de JWT e cookie de sessão
 │       │   └── service/         # MFA e relatórios
 │       └── resources/
@@ -64,12 +94,19 @@ dominus-gestor-evolution/
 ├── frontend/webapp/
 │   ├── index.html                # Login
 │   ├── cadastro.html             # Cadastro de operadores
+│   ├── recuperar-senha.html      # Recuperação de senha sem senha antiga
 │   ├── admin.html                # Usuários e MFA
 │   ├── gerente.html              # Gestão e relatórios
 │   ├── sistema.html              # Clientes e fornecedores
 │   ├── css/style.css             # Estilos próprios
-│   └── js/                       # nav.js (menu por perfil), clientes.js (listagem
-│                                  # paginada), admin.js (lista de usuários)
+│   └── js/
+│       ├── nav.js                # Menu lateral fixo por perfil (Início/Sair)
+│       ├── auth.js               # Login e verificação de MFA
+│       ├── cadastro.js           # Cadastro público de operadores
+│       ├── recuperar-senha.js    # Fluxo de recuperação de senha
+│       ├── clientes.js           # Listagem paginada/ordenável de clientes
+│       ├── admin.js              # Lista de usuários
+│       └── reports.js            # Exportação de relatórios (com filtro por cliente)
 ├── docker-compose.yml
 ├── Dockerfile
 ├── docker-entrypoint.sh
@@ -87,15 +124,17 @@ dominus-gestor-evolution/
 - Maven 3.9 ou Maven Wrapper.
 - Docker é opcional.
 
-### Com um clique (recomendado)
+### Passo a passo (com um clique — recomendado)
 
-Na raiz do projeto, no Windows, dê duplo clique em `start-dev.bat` (ou execute `.\start-dev.ps1` no PowerShell). O script:
+1. Clone ou abra a pasta do projeto.
+2. Na raiz do projeto, no Windows, dê duplo clique em `start-dev.bat` (ou execute `.\start-dev.ps1` no PowerShell).
+3. O script decide sozinho o modo de execução:
+   - **Com Docker instalado**: na primeira vez, gera automaticamente `secrets/postgres_password.txt` e o par de chaves JWT (`secrets/jwt-private-key.pem`/`jwt-public-key.pem`) — nunca versionados — e sobe `docker compose up --build` (PostgreSQL real + aplicação, já com a massa de dados de desenvolvimento carregada).
+   - **Sem Docker**: localiza o Maven (PATH, wrapper ou instalação conhecida) e inicia `mvn quarkus:dev` direto em `backend/`, usando H2 em memória compatível com PostgreSQL (também populado com a mesma massa de dados).
+4. Aguarde a aplicação subir e acesse **http://localhost:8080**.
+5. Faça login com as [credenciais locais](#credenciais-locais) abaixo.
 
-1. Detecta se o Docker está disponível na máquina.
-2. **Com Docker**: na primeira vez, gera sozinho `secrets/postgres_password.txt` e o par de chaves JWT (`secrets/jwt-private-key.pem`/`jwt-public-key.pem`) — nunca versionados — e sobe `docker compose up --build` (PostgreSQL real + aplicação).
-3. **Sem Docker**: localiza o Maven (PATH, wrapper ou instalação conhecida) e inicia `mvn quarkus:dev` direto em `backend/`, usando H2 temporário compatível com PostgreSQL.
-
-Em ambos os casos a aplicação sobe sozinha em [http://localhost:8080](http://localhost:8080), sem passos manuais.
+Nenhum passo manual é necessário em nenhum dos dois modos.
 
 ### Com Docker (manual)
 
@@ -128,12 +167,14 @@ mvn quarkus:dev -Dquarkus.profile=dev -Dquarkus.analytics.disabled=true
 
 Não execute Maven na raiz: o `pom.xml` fica em `backend/`.
 
-### Execução manual
+### Rodando os testes automatizados
 
 ```powershell
 cd backend
-mvn quarkus:dev -Dquarkus.profile=dev -Dquarkus.analytics.disabled=true
+mvn test
 ```
+
+Cobre login/MFA/recuperação de senha (`AuthControllerTest`), emissão de token (`TokenServiceTest`), seleção de datasource (`DatabaseConfigTest`) e geração de relatórios (`ReportServiceTest`).
 
 ### Credenciais locais
 
@@ -143,7 +184,7 @@ O administrador é criado pelo banco de dados, nunca pela tela:
 - E-mail: `admin@dominus.com.br`
 - Senha: `Toor#@!1439$10`
 
-A senha é gravada somente como BCrypt. A tela `cadastro.html` permite criar usuários `OPERADOR`; não é possível criar administrador pela interface.
+A senha é gravada somente como BCrypt. A tela `cadastro.html` permite criar usuários `OPERADOR`; não é possível criar administrador pela interface. Esqueceu a senha de algum usuário? Use `recuperar-senha.html` — veja [Recuperação de senha](#autenticação-e-segurança) acima.
 
 ### Banco de dados
 
@@ -171,6 +212,22 @@ Sem essas variáveis, a aplicação falha ao iniciar fora do perfil dev/test —
 ### Identidade visual
 
 A aplicação e seus textos estão em português do Brasil. O frontend usa somente estilos e elementos próprios do Dominus Gestor, sem logos, imagens, ícones ou fontes de frameworks externos. O logotipo do Dominus Gestor Evolution (`reports/logo-dominus.png`) é usado exclusivamente no cabeçalho dos relatórios exportados (PDF/XLSX/DOCX/CSV/TXT).
+
+---
+
+## Endpoints principais da API
+
+| Método | Rota | Descrição |
+|---|---|---|
+| `POST` | `/api/auth/login` | Autentica por login/e-mail + senha; retorna `mfaRequired` se o usuário tiver MFA habilitado. |
+| `POST` | `/api/auth/mfa/verify` | Valida o código TOTP e emite a sessão (cookie `dominus_session`). |
+| `POST` | `/api/auth/password/forgot` | Confirma que login/e-mail existe e está ativo; retorna se o MFA é obrigatório para a próxima etapa. |
+| `POST` | `/api/auth/password/reset` | Define uma nova senha (com código MFA se aplicável), sem exigir a senha atual. |
+| `POST` | `/api/auth/logout` | Encerra a sessão (limpa o cookie). |
+| `GET` | `/api/usuarios` | Lista usuários cadastrados (requer sessão). |
+| `POST` | `/api/usuarios` | Cadastra um novo usuário `OPERADOR` (público). |
+| `GET` | `/api/clientes` | Lista clientes paginada, ordenável e buscável (requer sessão). Parâmetros: `q`, `page`, `pageSize` (10/20/50/100), `sort` (`nome_empresarial`/`cnpj`), `dir` (`asc`/`desc`). |
+| `GET` | `/api/relatorios/exportar` | Exporta relatório Jasper. Parâmetros: `nome`, `formato` (`pdf`/`xlsx`/`docx`/`csv`/`txt`), `cliente` (opcional, filtra por nome). |
 
 ---
 

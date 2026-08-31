@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dominus Gestor - Recuperar Senha</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body class="login-body">
+    <div class="login-card">
+      <h2>Esqueci minha senha</h2>
+      <p class="subtitle">
+        Informe seu login ou e-mail cadastrado para definir uma nova senha
+      </p>
+
+      <form id="identidadeForm">
+        <div class="form-group">
+          <label for="identidade">Login ou e-mail cadastrado</label>
+          <input
+            type="text"
+            id="identidade"
+            required
+            autocomplete="username"
+            placeholder="Seu login ou e-mail"
+          />
+        </div>
+        <p
+          id="identidadeErro"
+          class="form-error"
+          role="alert"
+          aria-live="polite"
+        ></p>
+        <button type="submit" class="btn-primary">Continuar</button>
+      </form>
+
+      <form id="redefinirForm" class="hidden">
+        <div id="mfaSection" class="form-group hidden">
+          <label for="mfaCode">Código MFA / 2FA (Authenticator)</label>
+          <input
+            type="text"
+            id="mfaCode"
+            inputmode="numeric"
+            pattern="[0-9]{6}"
+            maxlength="6"
+            placeholder="123456"
+          />
+        </div>
+        <div class="form-group">
+          <label for="novaSenha">Nova senha</label>
+          <input
+            type="password"
+            id="novaSenha"
+            required
+            minlength="8"
+            placeholder="••••••••"
+          />
+        </div>
+        <div class="form-group">
+          <label for="confirmarSenha">Confirmar nova senha</label>
+          <input
+            type="password"
+            id="confirmarSenha"
+            required
+            minlength="8"
+            placeholder="••••••••"
+          />
+        </div>
+        <p
+          id="redefinirErro"
+          class="form-error"
+          role="alert"
+          aria-live="polite"
+        ></p>
+        <p id="redefinirSucesso" class="form-success hidden"></p>
+        <button type="submit" class="btn-primary">Salvar nova senha</button>
+      </form>
+
+      <p class="form-link"><a href="index.html">Voltar para o login</a></p>
+    </div>
+    <script src="js/recuperar-senha.js"></script>
+  </body>
+</html>

@@ -114,12 +114,93 @@ public class AuthController {
     }
 
     @POST
+    @Path("/password/forgot")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @PermitAll
+    public Response esqueciSenha(JsonNode request) {
+        String identity = identidade(request);
+        if (identity.isBlank()) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of("error", "Informe o login ou e-mail cadastrado")).build();
+        }
+        String sql = "SELECT mfa_habilitado FROM usuario WHERE (lower(email) = lower(?) OR lower(login) = lower(?)) "
+                + "AND situacao = 'ATIVO'";
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, identity);
+            statement.setString(2, identity);
+            try (ResultSet result = statement.executeQuery()) {
+                if (!result.next()) {
+                    return Response.status(Response.Status.NOT_FOUND)
+                            .entity(Map.of("error", "Usuário não encontrado ou inativo")).build();
+                }
+                return Response.ok(Map.of("mfaRequired", result.getBoolean("mfa_habilitado"))).build();
+            }
+        } catch (Exception exception) {
+            return unavailable();
+        }
+    }
+
+    @POST
+    @Path("/password/reset")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @PermitAll
+    public Response redefinirSenha(JsonNode request) {
+        String identity = identidade(request);
+        String code = text(request, "code");
+        String novaSenha = text(request, "novaSenha");
+        if (identity.isBlank() || novaSenha.length() < 8) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of("error", "Login/e-mail e nova senha com no mínimo 8 caracteres são obrigatórios"))
+                    .build();
+        }
+        String selectSql = "SELECT id, mfa_habilitado, mfa_secret FROM usuario "
+                + "WHERE (lower(email) = lower(?) OR lower(login) = lower(?)) AND situacao = 'ATIVO'";
+        try (Connection connection = dataSource.getConnection()) {
+            int id;
+            try (PreparedStatement statement = connection.prepareStatement(selectSql)) {
+                statement.setString(1, identity);
+                statement.setString(2, identity);
+                try (ResultSet result = statement.executeQuery()) {
+                    if (!result.next()) {
+                        return Response.status(Response.Status.NOT_FOUND)
+                                .entity(Map.of("error", "Usuário não encontrado ou inativo")).build();
+                    }
+                    if (result.getBoolean("mfa_habilitado")) {
+                        if (!code.matches("\\d{6}") || result.getString("mfa_secret") == null
+                                || !mfaService.verifyCode(result.getString("mfa_secret"), Integer.parseInt(code))) {
+                            return Response.status(Response.Status.UNAUTHORIZED)
+                                    .entity(Map.of("error", "Código MFA inválido")).build();
+                        }
+                    }
+                    id = result.getInt("id");
+                }
+            }
+            try (PreparedStatement update = connection
+                    .prepareStatement("UPDATE usuario SET senha_hash = ? WHERE id = ?")) {
+                update.setString(1, BCrypt.hashpw(novaSenha, BCrypt.gensalt(12)));
+                update.setInt(2, id);
+                update.executeUpdate();
+            }
+            return Response.ok(Map.of("status", "SENHA_ATUALIZADA")).build();
+        } catch (Exception exception) {
+            return unavailable();
+        }
+    }
+
+    @POST
     @Path("/logout")
     @PermitAll
     public Response logout() {
         return Response.ok(Map.of("status", "LOGGED_OUT"))
                 .header("Set-Cookie", sessionCookies.clear())
                 .build();
+    }
+
+    private static String identidade(JsonNode request) {
+        String login = text(request, "login");
+        String email = text(request, "email");
+        return login.isBlank() ? email : login;
     }
 
     private static String text(JsonNode request, String field) {
