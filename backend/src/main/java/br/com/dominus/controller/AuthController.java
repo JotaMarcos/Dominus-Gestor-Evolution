@@ -11,6 +11,15 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SecuritySchemeIn;
+import org.eclipse.microprofile.openapi.annotations.enums.SecuritySchemeType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.mindrot.jbcrypt.BCrypt;
 
 import javax.sql.DataSource;
@@ -21,6 +30,14 @@ import java.util.Map;
 
 @Path("/api/auth")
 @Produces(MediaType.APPLICATION_JSON)
+@Tag(name = "Autenticação", description = "Login, MFA (TOTP), recuperação de senha e logout")
+@SecurityScheme(
+        securitySchemeName = "cookieAuth",
+        type = SecuritySchemeType.APIKEY,
+        in = SecuritySchemeIn.COOKIE,
+        apiKeyName = "dominus_session",
+        description = "Cookie de sessão HttpOnly (JWT RS256) emitido por /api/auth/login "
+                + "(ou /api/auth/mfa/verify quando o MFA está habilitado).")
 public class AuthController {
     @Inject
     DataSource dataSource;
@@ -38,6 +55,14 @@ public class AuthController {
     @Path("/login")
     @Consumes(MediaType.APPLICATION_JSON)
     @PermitAll
+    @Operation(summary = "Login", description = "Autentica por login ou e-mail + senha. Se o usuário tiver MFA "
+            + "habilitado, retorna mfaRequired=true sem emitir sessão — o front-end deve então chamar "
+            + "/api/auth/mfa/verify.")
+    @RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON,
+            examples = @ExampleObject(name = "credenciais", value = "{\"login\":\"Admin\",\"senha\":\"sua-senha\"}")))
+    @APIResponse(responseCode = "200", description = "Autenticado; cookie dominus_session emitido se MFA não for necessário")
+    @APIResponse(responseCode = "400", description = "E-mail/login ou senha ausentes")
+    @APIResponse(responseCode = "401", description = "Credenciais inválidas")
     public Response login(JsonNode request) {
         String email = text(request, "email");
         String login = text(request, "login");
@@ -76,6 +101,9 @@ public class AuthController {
     @POST
     @Path("/mfa/toggle")
     @PermitAll
+    @Operation(summary = "Alternar MFA (reservado)", description = "Endpoint reservado para habilitar/desabilitar "
+            + "o MFA do usuário autenticado — ainda não implementado.")
+    @APIResponse(responseCode = "501", description = "Não implementado")
     public Response toggleMfa() {
         return Response.status(Response.Status.NOT_IMPLEMENTED)
                 .entity(Map.of("error", "Operação requer usuário autenticado")).build();
@@ -85,6 +113,13 @@ public class AuthController {
     @Path("/mfa/verify")
     @Consumes(MediaType.APPLICATION_JSON)
     @PermitAll
+    @Operation(summary = "Verificar código MFA", description = "Valida o código TOTP de 6 dígitos (Google "
+            + "Authenticator) e, se correto, emite a sessão (cookie dominus_session).")
+    @RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON,
+            examples = @ExampleObject(name = "codigo-totp", value = "{\"email\":\"usuario@empresa.com\",\"code\":\"123456\"}")))
+    @APIResponse(responseCode = "200", description = "Código válido; cookie dominus_session emitido")
+    @APIResponse(responseCode = "400", description = "E-mail ou código MFA ausentes/mal formatados")
+    @APIResponse(responseCode = "401", description = "Código MFA inválido")
     public Response verifyMfa(JsonNode request) {
         String email = text(request, "email");
         String code = text(request, "code");
@@ -117,6 +152,14 @@ public class AuthController {
     @Path("/password/forgot")
     @Consumes(MediaType.APPLICATION_JSON)
     @PermitAll
+    @Operation(summary = "Esqueci minha senha", description = "Confirma que o login/e-mail informado existe e está "
+            + "ativo, e informa se o MFA é obrigatório na próxima etapa (/api/auth/password/reset). Não depende de "
+            + "envio de e-mail.")
+    @RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON,
+            examples = @ExampleObject(name = "identidade", value = "{\"login\":\"usuario.exemplo\"}")))
+    @APIResponse(responseCode = "200", description = "Usuário encontrado; retorna se o MFA é obrigatório")
+    @APIResponse(responseCode = "400", description = "Login ou e-mail não informado")
+    @APIResponse(responseCode = "404", description = "Usuário não encontrado ou inativo")
     public Response esqueciSenha(JsonNode request) {
         String identity = identidade(request);
         if (identity.isBlank()) {
@@ -145,6 +188,15 @@ public class AuthController {
     @Path("/password/reset")
     @Consumes(MediaType.APPLICATION_JSON)
     @PermitAll
+    @Operation(summary = "Redefinir senha", description = "Define uma nova senha (mínimo 8 caracteres) sem exigir "
+            + "a senha atual. Exige o código MFA quando o usuário tem TOTP habilitado.")
+    @RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON,
+            examples = @ExampleObject(name = "nova-senha",
+                    value = "{\"login\":\"usuario.exemplo\",\"code\":\"123456\",\"novaSenha\":\"NovaSenhaForte123\"}")))
+    @APIResponse(responseCode = "200", description = "Senha atualizada")
+    @APIResponse(responseCode = "400", description = "Login/e-mail ausente ou nova senha com menos de 8 caracteres")
+    @APIResponse(responseCode = "401", description = "Código MFA inválido")
+    @APIResponse(responseCode = "404", description = "Usuário não encontrado ou inativo")
     public Response redefinirSenha(JsonNode request) {
         String identity = identidade(request);
         String code = text(request, "code");
@@ -191,6 +243,8 @@ public class AuthController {
     @POST
     @Path("/logout")
     @PermitAll
+    @Operation(summary = "Logout", description = "Encerra a sessão, limpando o cookie dominus_session.")
+    @APIResponse(responseCode = "200", description = "Sessão encerrada")
     public Response logout() {
         return Response.ok(Map.of("status", "LOGGED_OUT"))
                 .header("Set-Cookie", sessionCookies.clear())

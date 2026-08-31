@@ -11,6 +11,13 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.mindrot.jbcrypt.BCrypt;
 
 import javax.sql.DataSource;
@@ -24,12 +31,17 @@ import java.util.Map;
 
 @Path("/api/usuarios")
 @Produces(MediaType.APPLICATION_JSON)
+@Tag(name = "Usuários", description = "Listagem e cadastro público de usuários")
 public class UsuarioController {
     @Inject
     DataSource dataSource;
 
     @GET
     @Authenticated
+    @SecurityRequirement(name = "cookieAuth")
+    @Operation(summary = "Listar usuários", description = "Lista todos os usuários cadastrados (nome, login, "
+            + "e-mail, perfil, situação e MFA). Requer sessão válida.")
+    @APIResponse(responseCode = "200", description = "Lista de usuários")
     public Response listar() {
         String sql = "SELECT u.id, u.nome, u.login, u.email, p.nome AS perfil, u.mfa_habilitado, u.situacao "
                 + "FROM usuario u JOIN perfil p ON p.id = u.id_perfil ORDER BY u.nome ASC";
@@ -58,6 +70,16 @@ public class UsuarioController {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @PermitAll
+    @Operation(summary = "Cadastro público de operador", description = "Cria um novo usuário com perfil OPERADOR. "
+            + "Uso público, sem sessão — utilizado pela tela cadastro.html. Não é possível criar administrador "
+            + "por esta via.")
+    @RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON,
+            examples = @ExampleObject(name = "novo-usuario",
+                    value = "{\"nome\":\"Nome Completo\",\"login\":\"usuario.exemplo\","
+                            + "\"email\":\"usuario@empresa.com\",\"senha\":\"SenhaForte123\"}")))
+    @APIResponse(responseCode = "201", description = "Usuário OPERADOR criado")
+    @APIResponse(responseCode = "400", description = "Campo obrigatório ausente ou senha com menos de 8 caracteres")
+    @APIResponse(responseCode = "409", description = "Login ou e-mail já cadastrado")
     public Response cadastrar(JsonNode request) {
         String nome = text(request, "nome");
         String login = text(request, "login");

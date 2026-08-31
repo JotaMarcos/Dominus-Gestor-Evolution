@@ -10,6 +10,13 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -30,6 +37,8 @@ import java.util.Set;
 @Path("/api/clientes")
 @Produces(MediaType.APPLICATION_JSON)
 @Authenticated
+@Tag(name = "Clientes", description = "Listagem paginada, ordenável e buscável de clientes")
+@SecurityRequirement(name = "cookieAuth")
 public class ClienteController {
     private static final Set<Integer> TAMANHOS_PAGINA = Set.of(10, 20, 50, 100);
     private static final Set<String> COLUNAS_ORDENACAO = Set.of("nome_empresarial", "cnpj");
@@ -41,6 +50,15 @@ public class ClienteController {
     String dbKind;
 
     @GET
+    @Operation(summary = "Listar clientes", description = "Lista paginada de clientes, com busca por razão social "
+            + "(Full-Text Search nativo no PostgreSQL, ILIKE no H2 de dev/test) e ordenação por razão social ou CNPJ.")
+    @Parameter(name = "q", description = "Termo de busca por razão social (opcional)")
+    @Parameter(name = "page", description = "Número da página, começando em 1")
+    @Parameter(name = "pageSize", description = "Itens por página", schema = @Schema(type = SchemaType.INTEGER, enumeration = {"10", "20", "50", "100"}))
+    @Parameter(name = "sort", description = "Coluna de ordenação", schema = @Schema(type = SchemaType.STRING, enumeration = {"nome_empresarial", "cnpj"}))
+    @Parameter(name = "dir", description = "Direção da ordenação", schema = @Schema(type = SchemaType.STRING, enumeration = {"asc", "desc"}))
+    @APIResponse(responseCode = "200", description = "Página de clientes com metadados de paginação")
+    @APIResponse(responseCode = "503", description = "Falha ao consultar o banco de dados")
     public Response listar(@QueryParam("q") @DefaultValue("") String termo,
             @QueryParam("page") @DefaultValue("1") int pagina,
             @QueryParam("pageSize") @DefaultValue("20") int tamanhoPagina,

@@ -16,6 +16,7 @@ O backend usa Quarkus 3.27, Java 21, REST, CDI e pool Agroal. O frontend usa HTM
 - **PostgreSQL 16**: Banco de dados relacional com modelagem para RBAC e MFA.
 - **Agroal**: Pool de conexões JDBC gerenciado pelo Quarkus.
 - **JasperReports Engine (v7.0.7)**: Motor de relatórios para exportação em **PDF, XLSX, DOCX, CSV e TXT**.
+- **SmallRye OpenAPI / Swagger UI**: documentação interativa da API REST (`/q/swagger-ui`).
 - **Google Authenticator (TOTP)**: autenticação multifator.
 - **BCrypt (jbcrypt)**: hash de senhas, nunca armazenadas em texto puro.
 - **Docker e Docker Compose**: PostgreSQL e aplicação em containers.
@@ -218,6 +219,9 @@ A aplicação e seus textos estão em português do Brasil. O frontend usa somen
 ---
 
 ## Endpoints principais da API
+
+> 📘 **Documentação interativa (Swagger UI):** com a aplicação em execução, acesse
+> `http://localhost:8080/q/swagger-ui` — especificação OpenAPI bruta em `http://localhost:8080/q/openapi`.
 
 | Método | Rota | Descrição |
 |---|---|---|

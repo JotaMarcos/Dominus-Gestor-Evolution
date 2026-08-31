@@ -10,6 +10,14 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 
 import javax.sql.DataSource;
@@ -19,6 +27,8 @@ import java.util.HashMap;
 
 @Path("/api/relatorios/exportar")
 @Authenticated
+@Tag(name = "Relatórios", description = "Exportação de relatórios gerenciais (JasperReports + Apache POI)")
+@SecurityRequirement(name = "cookieAuth")
 public class RelatorioController {
     private static final Logger LOG = Logger.getLogger(RelatorioController.class);
 
@@ -27,6 +37,15 @@ public class RelatorioController {
 
     @GET
     @Produces(MediaType.WILDCARD)
+    @Operation(summary = "Exportar relatório", description = "Gera e retorna, como arquivo para download, o "
+            + "relatório de clientes ou financeiro no formato solicitado. Opcionalmente filtra por um único cliente.")
+    @Parameter(name = "nome", description = "Relatório a exportar", schema = @Schema(type = SchemaType.STRING, enumeration = {"relatorio_clientes", "relatorio_financeiro"}))
+    @Parameter(name = "formato", description = "Formato de exportação", schema = @Schema(type = SchemaType.STRING, enumeration = {"pdf", "xlsx", "docx", "csv", "txt"}))
+    @Parameter(name = "cliente", description = "Filtra o relatório por nome do cliente (opcional)")
+    @APIResponse(responseCode = "200", description = "Arquivo do relatório gerado",
+            content = @Content(mediaType = MediaType.APPLICATION_OCTET_STREAM))
+    @APIResponse(responseCode = "400", description = "Relatório ou formato inválido")
+    @APIResponse(responseCode = "500", description = "Falha ao gerar o relatório")
     public Response exportar(@QueryParam("nome") @DefaultValue("relatorio_clientes") String report,
             @QueryParam("formato") @DefaultValue("pdf") String formatName,
             @QueryParam("cliente") @DefaultValue("") String clienteFiltro) {
