@@ -10,13 +10,13 @@ const MENU_POR_PERFIL = {
   ADMINISTRADOR: [
     { href: "admin.html", label: "Usuários & MFA" },
     { href: "gerente.html", label: "Dashboard Gerencial" },
-    { href: "sistema.html", label: "Clientes & Financeiro" },
+    { href: "sistema.html", label: "Clientes & Fornecedores" },
   ],
   GERENTE: [
     { href: "gerente.html", label: "Dashboard Gerencial" },
-    { href: "sistema.html", label: "Clientes & Financeiro" },
+    { href: "sistema.html", label: "Clientes & Fornecedores" },
   ],
-  OPERADOR: [{ href: "sistema.html", label: "Clientes & Financeiro" }],
+  OPERADOR: [{ href: "sistema.html", label: "Clientes & Fornecedores" }],
 };
 
 const BADGE_POR_PERFIL = {

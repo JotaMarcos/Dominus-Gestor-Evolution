@@ -32,11 +32,12 @@ O backend usa Quarkus 3.27, Java 21, REST, CDI e pool Agroal. O frontend usa HTM
 - Sessão autenticada por JWT assinado (RS256), entregue em cookie `HttpOnly`, `SameSite=Strict` (e `Secure` fora do perfil dev) — nunca exposto ao JavaScript do navegador.
 - Todos os endpoints de negócio exigem sessão válida; endpoints não anotados são negados por padrão (`quarkus.security.jaxrs.deny-unannotated-endpoints`).
 - Perfis `ADMINISTRADOR`, `GERENTE` e `OPERADOR`.
-- Menu lateral montado por perfil em todas as telas internas (`js/nav.js`), com atalho **Início** para a página inicial do perfil e botão **Sair**. O `ADMINISTRADOR` alterna livremente entre Usuários & MFA, Dashboard Gerencial e Clientes & Financeiro a partir de qualquer página.
+- Menu lateral montado por perfil em todas as telas internas (`js/nav.js`), com atalho **Início** para a página inicial do perfil e botão **Sair**. O `ADMINISTRADOR` alterna livremente entre Usuários & MFA, Dashboard Gerencial e Clientes & Fornecedores a partir de qualquer página.
 - Cadastro público restrito a usuários `OPERADOR`.
 - Administrador inicial criado exclusivamente via banco de dados.
-- Clientes, fornecedores e lançamentos financeiros — **endpoints REST hoje retornam dados de exemplo fixos (mock)**; a persistência real ainda será implementada.
-- Relatórios em PDF, XLSX, DOCX, CSV e TXT.
+- `GET /api/usuarios` lista os usuários cadastrados (nome, login, e-mail, perfil, situação e MFA), renderizado dinamicamente em `admin.html`.
+- `GET /api/clientes` lista clientes com paginação (10/20/50/100 por página, com botões primeira/anterior/próxima/última), ordenação crescente/decrescente por razão social ou CNPJ, e busca por nome do cliente — usando **Full-Text Search nativo do PostgreSQL** (`to_tsvector`/`plainto_tsquery`) quando o banco é PostgreSQL real; no perfil dev/test (H2, sem tsvector) a mesma API cai automaticamente para `ILIKE`, mantendo o comportamento idêntico para quem está testando sem Docker.
+- Relatórios em PDF, XLSX, DOCX, CSV e TXT, com o logotipo do Dominus Gestor Evolution no cabeçalho e personalização opcional por cliente (`?cliente=nome`) — disponível em `gerente.html` via campo "Personalizar por cliente".
 
 > **Status de segurança conhecido:** `/api/auth/mfa/toggle` ainda não está implementado (sempre responde `501`); a emissão de sessão após MFA já funciona (`/api/auth/mfa/verify`).
 
@@ -56,16 +57,19 @@ dominus-gestor-evolution/
 │       │   └── service/         # MFA e relatórios
 │       └── resources/
 │           ├── application.properties
-│           ├── db/               # Schema e seed do administrador
-│           └── reports/          # Modelos JasperReports
+│           ├── db/               # schema.sql (portável), dev-seed.sql (massa de
+│           │                     # dados dev/test) e postgres-fulltext.sql
+│           │                     # (índice GIN exclusivo do PostgreSQL real)
+│           └── reports/          # Modelos JasperReports + logo-dominus.png
 ├── frontend/webapp/
 │   ├── index.html                # Login
 │   ├── cadastro.html             # Cadastro de operadores
 │   ├── admin.html                # Usuários e MFA
 │   ├── gerente.html              # Gestão e relatórios
-│   ├── sistema.html              # Clientes e financeiro
+│   ├── sistema.html              # Clientes e fornecedores
 │   ├── css/style.css             # Estilos próprios
-│   └── js/                       # Comportamentos da interface (nav.js: menu por perfil)
+│   └── js/                       # nav.js (menu por perfil), clientes.js (listagem
+│                                  # paginada), admin.js (lista de usuários)
 ├── docker-compose.yml
 ├── Dockerfile
 ├── docker-entrypoint.sh
@@ -145,6 +149,16 @@ A senha é gravada somente como BCrypt. A tela `cadastro.html` permite criar usu
 
 Em produção, configure `DB_URL`, `DB_USER` e `DB_PASS`, ou `DB_PASS_FILE` no Docker. O PostgreSQL é o banco oficial e o Quarkus gerencia o pool Agroal. O H2 é usado nos perfis `dev` e `test` (efêmero, recriado a cada execução/teste).
 
+### Massa de dados de desenvolvimento
+
+`db/dev-seed.sql` é carregado automaticamente nos perfis `dev`/`test` (e também no primeiro `docker compose up`, via `docker-entrypoint-initdb.d`) e contém:
+
+- **20 usuários** no total (1 `ADMINISTRADOR` criado pelo `schema.sql` com a senha oficial + 19 gerados: 3 `ADMINISTRADOR`, 6 `GERENTE`, 10 `OPERADOR`). Todos os 19 usam a senha **`Dominus@123`** — login pelo campo `login` mostrado em `admin.html` (ex.: `caio.almeida.5`).
+- **5.000 clientes** com endereço, CNPJ, contato e situação variados, usados para validar busca, ordenação e paginação.
+- **10.000 lançamentos financeiros** (2 por cliente, entre receitas e despesas), além das contas e categorias necessárias para os relatórios.
+
+O índice `idx_cliente_busca_fulltext` (GIN sobre `to_tsvector('portuguese', nome_empresarial)`), usado pela busca full-text, só é aplicado ao PostgreSQL real (`db/postgres-fulltext.sql`) — o H2 não suporta `tsvector`.
+
 ### Sessão e autenticação (JWT)
 
 Fora dos perfis `dev`/`test` (que usam um par de chaves de conveniência versionado apenas para esses perfis), é **obrigatório** configurar:
@@ -156,7 +170,7 @@ Sem essas variáveis, a aplicação falha ao iniciar fora do perfil dev/test —
 
 ### Identidade visual
 
-A aplicação e seus textos estão em português do Brasil. O frontend usa somente estilos e elementos próprios do Dominus Gestor, sem logos, imagens, ícones ou fontes de frameworks externos.
+A aplicação e seus textos estão em português do Brasil. O frontend usa somente estilos e elementos próprios do Dominus Gestor, sem logos, imagens, ícones ou fontes de frameworks externos. O logotipo do Dominus Gestor Evolution (`reports/logo-dominus.png`) é usado exclusivamente no cabeçalho dos relatórios exportados (PDF/XLSX/DOCX/CSV/TXT).
 
 ---
 

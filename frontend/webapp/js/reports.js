@@ -1,3 +1,6 @@
 function exportar(nome, formato) {
-    window.open(`/api/relatorios/exportar?nome=${nome}&formato=${formato}`, '_blank');
+    const campoCliente = document.getElementById('filtroClienteRelatorio');
+    const cliente = campoCliente ? campoCliente.value.trim() : '';
+    const parametros = new URLSearchParams({ nome, formato, cliente });
+    window.open(`/api/relatorios/exportar?${parametros.toString()}`, '_blank');
 }

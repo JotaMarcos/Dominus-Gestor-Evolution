@@ -3,8 +3,14 @@
               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
               xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
               name="relatorio_clientes" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+    <parameter name="NOME_CLIENTE" class="java.lang.String">
+        <defaultValueExpression><![CDATA[""]]></defaultValueExpression>
+    </parameter>
+    <parameter name="LOGO" class="java.io.InputStream" isForPrompting="false"/>
     <queryString>
-        <![CDATA[SELECT id, nome_empresarial, cnpj, email, telefone, situacao FROM cliente ORDER BY id ASC]]>
+        <![CDATA[SELECT id, nome_empresarial, cnpj, email, telefone, situacao FROM cliente
+WHERE UPPER(nome_empresarial) LIKE UPPER('%' || $P{NOME_CLIENTE} || '%')
+ORDER BY nome_empresarial ASC]]>
     </queryString>
     <field name="id" class="java.lang.Integer"/>
     <field name="nome_empresarial" class="java.lang.String"/>
@@ -12,14 +18,26 @@
     <field name="email" class="java.lang.String"/>
     <field name="situacao" class="java.lang.String"/>
     <title>
-        <band height="50">
+        <band height="75">
+            <image>
+                <reportElement x="0" y="5" width="55" height="55"/>
+                <imageExpression><![CDATA[$P{LOGO}]]></imageExpression>
+            </image>
             <staticText>
-                <reportElement x="0" y="10" width="555" height="30"/>
-                <textElement textAlignment="Center" verticalAlignment="Middle">
-                    <font size="18" isBold="true"/>
-                </textElement>
-                <text><![CDATA[DOMINUS GESTOR - RELATÓRIO DE CLIENTES]]></text>
+                <reportElement x="65" y="5" width="490" height="24"/>
+                <textElement verticalAlignment="Middle"><font size="16" isBold="true"/></textElement>
+                <text><![CDATA[DOMINUS GESTOR EVOLUTION]]></text>
             </staticText>
+            <staticText>
+                <reportElement x="65" y="29" width="490" height="18"/>
+                <textElement verticalAlignment="Middle"><font size="12" isBold="true"/></textElement>
+                <text><![CDATA[Relatório de Clientes]]></text>
+            </staticText>
+            <textField>
+                <reportElement x="65" y="48" width="490" height="14"/>
+                <textElement verticalAlignment="Middle"><font size="9" isItalic="true"/></textElement>
+                <textFieldExpression><![CDATA[$P{NOME_CLIENTE}.isEmpty() ? "Todos os clientes" : "Filtro: cliente contendo \"" + $P{NOME_CLIENTE} + "\""]]></textFieldExpression>
+            </textField>
         </band>
     </title>
     <columnHeader>

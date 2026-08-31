@@ -27,8 +27,57 @@
                     <button type="submit" class="btn-primary">Salvar Cliente</button>
                 </form>
             </section>
+
+            <section class="card">
+                <h3>Clientes Cadastrados</h3>
+                <div class="list-toolbar">
+                    <div class="search-box">
+                        <label for="buscaCliente" class="sr-only">Buscar por nome do cliente</label>
+                        <input type="search" id="buscaCliente" placeholder="Buscar por nome do cliente...">
+                        <button type="button" id="btnBuscar" class="btn-sm">Buscar</button>
+                    </div>
+                    <div class="page-size-box">
+                        <label for="tamanhoPagina">Itens por página</label>
+                        <select id="tamanhoPagina">
+                            <option value="10">10</option>
+                            <option value="20" selected>20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th><button type="button" class="th-sort" data-sort="nome_empresarial">Razão Social<span class="sort-icon"></span></button></th>
+                                <th><button type="button" class="th-sort" data-sort="cnpj">CNPJ<span class="sort-icon"></span></button></th>
+                                <th>E-mail</th>
+                                <th>Telefone</th>
+                                <th>Cidade/UF</th>
+                                <th>Situação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clientesTbody"></tbody>
+                    </table>
+                </div>
+                <p id="clientesMensagem" class="form-error" role="alert" aria-live="polite"></p>
+
+                <div class="pagination">
+                    <span id="paginacaoInfo" class="pagination-info"></span>
+                    <div class="pagination-buttons">
+                        <button type="button" id="btnPrimeira" class="btn-sm">&laquo; Primeira</button>
+                        <button type="button" id="btnAnterior" class="btn-sm">&lsaquo; Anterior</button>
+                        <span id="paginaAtualLabel" class="pagination-current"></span>
+                        <button type="button" id="btnProxima" class="btn-sm">Próxima &rsaquo;</button>
+                        <button type="button" id="btnUltima" class="btn-sm">Última &raquo;</button>
+                    </div>
+                </div>
+            </section>
         </main>
     </div>
     <script src="js/nav.js"></script>
+    <script src="js/clientes.js"></script>
 </body>
 </html>

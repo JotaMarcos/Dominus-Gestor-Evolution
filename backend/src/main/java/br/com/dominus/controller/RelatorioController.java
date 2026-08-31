@@ -28,7 +28,8 @@ public class RelatorioController {
     @GET
     @Produces(MediaType.WILDCARD)
     public Response exportar(@QueryParam("nome") @DefaultValue("relatorio_clientes") String report,
-            @QueryParam("formato") @DefaultValue("pdf") String formatName) {
+            @QueryParam("formato") @DefaultValue("pdf") String formatName,
+            @QueryParam("cliente") @DefaultValue("") String clienteFiltro) {
         if (!"relatorio_clientes".equals(report) && !"relatorio_financeiro".equals(report)) {
             return error(Response.Status.BAD_REQUEST, "Relatório inválido");
         }
@@ -52,7 +53,9 @@ public class RelatorioController {
         };
         try (Connection connection = dataSource.getConnection();
                 ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-            ReportService.exportReport(report, format, new HashMap<>(), connection, output);
+            HashMap<String, Object> parametros = new HashMap<>();
+            parametros.put("NOME_CLIENTE", clienteFiltro == null ? "" : clienteFiltro.trim());
+            ReportService.exportReport(report, format, parametros, connection, output);
             return Response.ok(output.toByteArray(), mimeType)
                     .header("Content-Disposition", "attachment; filename=" + report + "." + formatName.toLowerCase())
                     .build();

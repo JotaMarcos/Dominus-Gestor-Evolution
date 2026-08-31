@@ -14,6 +14,10 @@
             </header>
             <section class="card">
                 <h3>Central de Exportação de Relatórios</h3>
+                <div class="form-group">
+                    <label for="filtroClienteRelatorio">Personalizar por cliente (opcional)</label>
+                    <input type="text" id="filtroClienteRelatorio" placeholder="Nome do cliente para filtrar o relatório">
+                </div>
                 <div class="reports-grid">
                     <button onclick="exportar('relatorio_clientes', 'pdf')" class="btn-report pdf">Clientes (PDF)</button>
                     <button onclick="exportar('relatorio_clientes', 'xlsx')" class="btn-report xlsx">Clientes (XLSX)</button>
