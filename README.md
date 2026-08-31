@@ -32,6 +32,7 @@ O backend usa Quarkus 3.27, Java 21, REST, CDI e pool Agroal. O frontend usa HTM
 - Sessão autenticada por JWT assinado (RS256), entregue em cookie `HttpOnly`, `SameSite=Strict` (e `Secure` fora do perfil dev) — nunca exposto ao JavaScript do navegador.
 - Todos os endpoints de negócio exigem sessão válida; endpoints não anotados são negados por padrão (`quarkus.security.jaxrs.deny-unannotated-endpoints`).
 - Perfis `ADMINISTRADOR`, `GERENTE` e `OPERADOR`.
+- Menu lateral montado por perfil em todas as telas internas (`js/nav.js`), com atalho **Início** para a página inicial do perfil e botão **Sair**. O `ADMINISTRADOR` alterna livremente entre Usuários & MFA, Dashboard Gerencial e Clientes & Financeiro a partir de qualquer página.
 - Cadastro público restrito a usuários `OPERADOR`.
 - Administrador inicial criado exclusivamente via banco de dados.
 - Clientes, fornecedores e lançamentos financeiros — **endpoints REST hoje retornam dados de exemplo fixos (mock)**; a persistência real ainda será implementada.
@@ -64,7 +65,7 @@ dominus-gestor-evolution/
 │   ├── gerente.html              # Gestão e relatórios
 │   ├── sistema.html              # Clientes e financeiro
 │   ├── css/style.css             # Estilos próprios
-│   └── js/                       # Comportamentos da interface
+│   └── js/                       # Comportamentos da interface (nav.js: menu por perfil)
 ├── docker-compose.yml
 ├── Dockerfile
 ├── docker-entrypoint.sh

@@ -1,14 +1,11 @@
 let mfaPending = false;
 let pendingRole = null;
 
-const HOME_BY_ROLE = {
-  ADMINISTRADOR: "admin.html",
-  GERENTE: "gerente.html",
-  OPERADOR: "sistema.html",
-};
-
 function irParaTelaInicial(role) {
-  window.location.href = HOME_BY_ROLE[role] || "sistema.html";
+  if (role) {
+    window.DominusNav.salvarPerfil(role);
+  }
+  window.DominusNav.irParaHome(role);
 }
 
 document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
